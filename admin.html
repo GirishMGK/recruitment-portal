@@ -447,7 +447,7 @@ function doLogin() {
   if (pwd === getPwd()) {
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('mainApp').style.display = 'block';
-    initApp();
+    try { initApp(); } catch(e) { console.error('initApp error:', e); }
   } else {
     document.getElementById('loginErr').style.display = 'block';
   }
