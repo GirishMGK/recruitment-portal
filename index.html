@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Candidate Application — Recruitment Portal</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
+<!-- ═══════════════════════════════════════════════════════
+     FIREBASE SDK
+═══════════════════════════════════════════════════════ -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  FIREBASE CONFIG — Connected to your Recruitment project
+// ═══════════════════════════════════════════════════════
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyDhnlJfDrYmXmTnF3g4D-cxQF9zN8iT2dE",
+  authDomain:        "recruitment-8c7e0.firebaseapp.com",
+  databaseURL:       "https://recruitment-8c7e0-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:         "recruitment-8c7e0",
+  storageBucket:     "recruitment-8c7e0.firebasestorage.app",
+  messagingSenderId: "594218974070",
+  appId:             "1:594218974070:web:b134301f064e2accc6d857"
+};
+
+const FB_READY = FIREBASE_CONFIG.apiKey !== "YOUR_API_KEY";
+if (FB_READY) {
+  firebase.initializeApp(FIREBASE_CONFIG);
+}
+</script>
+
+<style>
+:root{--primary:#1B3D6F;--primary-light:#2a5498;--accent:#C9A84C;--success:#198754;--bg:#f2f5fa;}
+*{box-sizing:border-box;}
+body{background:var(--bg);font-family:'Segoe UI',system-ui,sans-serif;color:#333;margin:0;}
+.header-bar{background:linear-gradient(135deg,var(--primary) 0%,var(--primary-light) 100%);color:#fff;padding:18px 0;box-shadow:0 2px 10px rgba(0,0,0,.15);}
+.accent-bar{height:4px;background:linear-gradient(90deg,var(--accent),#f0d080);}
+.firm-name{font-size:1.3rem;font-weight:700;}
+.portal-label{font-size:.85rem;opacity:.75;}
+.form-container{max-width:760px;margin:36px auto;padding:0 16px 60px;}
+/* Steps */
+.steps-wrap{display:flex;justify-content:center;margin-bottom:30px;}
+.step-item{flex:1;display:flex;flex-direction:column;align-items:center;position:relative;}
+.step-item::before{content:'';position:absolute;top:15px;left:-50%;width:100%;height:2px;background:#dee2e6;z-index:0;}
+.step-item:first-child::before{display:none;}
+.step-circle{width:30px;height:30px;border-radius:50%;border:2px solid #dee2e6;background:#fff;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;position:relative;z-index:1;color:#aaa;}
+.step-item.active .step-circle{background:var(--primary);border-color:var(--primary);color:#fff;}
+.step-item.done .step-circle{background:var(--success);border-color:var(--success);color:#fff;}
+.step-item.done::before,.step-item.active::before{background:var(--primary);}
+.step-label{font-size:.68rem;color:#aaa;margin-top:5px;text-align:center;}
+.step-item.active .step-label{color:var(--primary);font-weight:600;}
+.step-item.done .step-label{color:var(--success);}
+/* Card */
+.form-card{background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.07);padding:36px;}
+.step-title{color:var(--primary);font-size:1.25rem;font-weight:700;margin-bottom:4px;}
+.step-sub{color:#666;font-size:.88rem;margin-bottom:26px;}
+/* Category */
+.cat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;}
+.cat-card{border:2px solid #dee2e6;border-radius:12px;padding:18px 12px;cursor:pointer;text-align:center;transition:all .2s;}
+.cat-card:hover{border-color:var(--primary-light);transform:translateY(-2px);box-shadow:0 4px 12px rgba(27,61,111,.15);}
+.cat-card.selected{border-color:var(--primary);background:#eef3fd;}
+.cat-card .ci{font-size:2rem;margin-bottom:8px;}
+.cat-card .cl{font-weight:700;font-size:.9rem;color:var(--primary);}
+.cat-card .cd{font-size:.75rem;color:#888;margin-top:3px;}
+/* Domains */
+.dom-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+.dom-chip{border:2px solid #dee2e6;border-radius:10px;padding:13px 15px;cursor:pointer;display:flex;align-items:center;gap:9px;transition:all .2s;user-select:none;}
+.dom-chip:hover{border-color:var(--primary-light);}
+.dom-chip.selected{border-color:var(--primary);background:#eef3fd;}
+.dom-chip input{accent-color:var(--primary);width:15px;height:15px;pointer-events:none;}
+/* Exam */
+.exam-box{background:#f6f9ff;border:1.5px solid #dce8f8;border-radius:12px;padding:20px;margin-bottom:14px;}
+.exam-title{font-weight:700;color:var(--primary);margin-bottom:14px;font-size:.95rem;}
+/* Langs */
+.lang-wrap{display:flex;flex-wrap:wrap;gap:9px;}
+.lang-chip{border:2px solid #dee2e6;border-radius:20px;padding:6px 15px;cursor:pointer;font-size:.85rem;transition:all .2s;}
+.lang-chip.selected{background:var(--primary);border-color:var(--primary);color:#fff;}
+/* Upload */
+.upload-zone{border:2px dashed #c2d4ed;border-radius:12px;padding:38px 20px;text-align:center;cursor:pointer;transition:all .2s;background:#f6f9ff;}
+.upload-zone:hover,.upload-zone.over{border-color:var(--primary);background:#eef3fd;}
+.upload-icon{font-size:2.8rem;color:var(--primary-light);margin-bottom:10px;}
+/* Slots */
+.slot-date-hdr{font-weight:700;color:var(--primary);padding:10px 0 6px;border-bottom:2px solid #dce8f8;margin-bottom:10px;font-size:.95rem;}
+.slot-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:18px;}
+.slot-btn{border:2px solid #dee2e6;border-radius:10px;padding:11px 6px;text-align:center;cursor:pointer;transition:all .2s;background:#fff;}
+.slot-btn:hover:not(.booked){border-color:var(--primary);background:#eef3fd;}
+.slot-btn.selected{background:var(--primary);border-color:var(--primary);color:#fff;}
+.slot-btn.booked{background:#f5f5f5;border-color:#e0e0e0;color:#bbb;cursor:not-allowed;}
+.slot-time{font-weight:700;font-size:.88rem;}
+.slot-dur{font-size:.72rem;opacity:.75;}
+/* Review */
+.rev-sec{background:#f6f9ff;border-radius:10px;padding:15px 18px;margin-bottom:13px;}
+.rev-title{font-weight:700;color:var(--primary);font-size:.8rem;text-transform:uppercase;letter-spacing:.5px;margin-bottom:9px;}
+.rev-row{display:flex;justify-content:space-between;padding:3px 0;font-size:.88rem;}
+.rev-lbl{color:#666;}
+.rev-val{font-weight:500;}
+/* Buttons */
+.nav-btns{display:flex;justify-content:space-between;margin-top:28px;gap:10px;}
+.btn-next{background:var(--primary);color:#fff;border:none;border-radius:10px;padding:11px 30px;font-weight:600;font-size:.92rem;transition:all .2s;cursor:pointer;}
+.btn-next:hover{background:var(--primary-light);}
+.btn-next:disabled{background:#aaa;cursor:not-allowed;}
+.btn-back{background:#fff;color:var(--primary);border:2px solid var(--primary);border-radius:10px;padding:11px 30px;font-weight:600;font-size:.92rem;cursor:pointer;}
+.btn-back:hover{background:#eef3fd;}
+/* Forms */
+.form-label{font-weight:600;font-size:.88rem;color:#444;margin-bottom:5px;}
+.form-control,.form-select{border-radius:8px;border:1.5px solid #dee2e6;padding:9px 13px;font-size:.92rem;}
+.form-control:focus,.form-select:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(27,61,111,.1);}
+/* Success */
+.success-wrap{text-align:center;padding:40px 20px;}
+.success-icon{font-size:4.5rem;color:var(--success);margin-bottom:18px;}
+.success-title{font-size:1.7rem;font-weight:700;color:var(--primary);}
+/* Setup Banner */
+.setup-banner{background:#fff3cd;border:2px solid #ffc107;border-radius:12px;padding:20px;margin-bottom:24px;}
+/* Toast */
+.toast-msg{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:13px 24px;border-radius:10px;z-index:9999;font-size:.9rem;box-shadow:0 4px 20px rgba(0,0,0,.2);color:#fff;}
+@media(max-width:576px){
+  .cat-grid{grid-template-columns:1fr;}
+  .dom-grid{grid-template-columns:1fr;}
+  .slot-grid{grid-template-columns:repeat(2,1fr);}
+  .form-card{padding:22px 16px;}
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header-bar">
+  <div class="container">
+    <div class="d-flex align-items-center gap-3">
+      <div style="background:rgba(255,255,255,.15);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;">⚖️</div>
+      <div>
+        <div class="firm-name" id="hdrFirmName">Loading…</div>
+        <div class="portal-label">Candidate Application &amp; Interview Scheduling Portal</div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="accent-bar"></div>
+
+<div class="form-container">
+
+  <!-- Firebase Setup Banner (shown if not configured) -->
+  <div class="setup-banner" id="setupBanner" style="display:none;">
+    <h6 class="fw-bold mb-1"><i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>Firebase Not Configured</h6>
+    <p class="mb-0" style="font-size:.85rem;">
+      This portal is not yet connected to the database. Please ask the admin to complete Firebase setup in <strong>admin.html → Settings → Firebase Setup</strong>.
+    </p>
+  </div>
+
+  <!-- Step Indicators -->
+  <div class="steps-wrap" id="stepsWrap">
+    <div class="step-item active" data-s="1"><div class="step-circle"><i class="bi bi-person"></i></div><div class="step-label">Profile</div></div>
+    <div class="step-item" data-s="2"><div class="step-circle"><i class="bi bi-book"></i></div><div class="step-label">Exams</div></div>
+    <div class="step-item" data-s="3"><div class="step-circle"><i class="bi bi-geo-alt"></i></div><div class="step-label">Personal</div></div>
+    <div class="step-item" data-s="4"><div class="step-circle"><i class="bi bi-file-earmark-person"></i></div><div class="step-label">Resume</div></div>
+    <div class="step-item" data-s="5"><div class="step-circle"><i class="bi bi-calendar3"></i></div><div class="step-label">Schedule</div></div>
+    <div class="step-item" data-s="6"><div class="step-circle"><i class="bi bi-check2-all"></i></div><div class="step-label">Review</div></div>
+  </div>
+
+  <!-- STEP 1: Profile -->
+  <div class="form-card" id="stp1">
+    <div class="step-title">What are you applying for?</div>
+    <div class="step-sub">Select your current qualification level to get started</div>
+    <div class="cat-grid">
+      <div class="cat-card" id="cat-article" onclick="selCat('article')">
+        <div class="ci">📚</div><div class="cl">Article</div>
+        <div class="cd">Foundation / Intermediate cleared</div>
+      </div>
+      <div class="cat-card" id="cat-semi" onclick="selCat('semi')">
+        <div class="ci">🎓</div><div class="cl">Semi Qualified</div>
+        <div class="cd">Intermediate both groups cleared</div>
+      </div>
+      <div class="cat-card" id="cat-qualified" onclick="selCat('qualified')">
+        <div class="ci">🏆</div><div class="cl">Qualified CA</div>
+        <div class="cd">CA Final both groups cleared</div>
+      </div>
+    </div>
+    <div id="domSec" style="display:none;">
+      <div class="form-label mb-2">Domain(s) of Interest <span class="text-muted fw-normal">(select all that apply)</span></div>
+      <div class="dom-grid">
+        <div class="dom-chip" id="dc-statutory" onclick="togDom('statutory',this)"><input type="checkbox" id="chk-statutory"><span>📋 Statutory Audit</span></div>
+        <div class="dom-chip" id="dc-internal" onclick="togDom('internal',this)"><input type="checkbox" id="chk-internal"><span>🔍 Internal Audit</span></div>
+        <div class="dom-chip" id="dc-direct" onclick="togDom('direct',this)"><input type="checkbox" id="chk-direct"><span>💼 Direct Tax</span></div>
+        <div class="dom-chip" id="dc-indirect" onclick="togDom('indirect',this)"><input type="checkbox" id="chk-indirect"><span>🧾 Indirect Tax</span></div>
+        <div class="dom-chip" id="dc-others" onclick="togDom('others',this)"><input type="checkbox" id="chk-others"><span>📌 Others — Specify</span></div>
+      </div>
+      <div id="othersBox" style="display:none;" class="mt-3">
+        <input type="text" class="form-control" id="othersVal" placeholder="Please specify your domain…">
+      </div>
+    </div>
+    <div class="nav-btns" style="justify-content:flex-end;">
+      <button class="btn-next" onclick="goNext(1)">Next &nbsp;<i class="bi bi-arrow-right"></i></button>
+    </div>
+  </div>
+
+  <!-- STEP 2: Exam Details -->
+  <div class="form-card" id="stp2" style="display:none;">
+    <div class="step-title">CA Examination Details</div>
+    <div class="step-sub">Enter your marks and number of attempts for each group</div>
+    <div class="exam-box">
+      <div class="exam-title"><i class="bi bi-1-square-fill me-1"></i> Group 1</div>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Total Marks Obtained (out of 400)</label>
+          <input type="number" class="form-control" id="g1m" min="0" max="400" placeholder="e.g. 280">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Number of Attempts</label>
+          <select class="form-select" id="g1a">
+            <option value="">Select…</option>
+            <option>1</option><option>2</option><option>3</option><option>4</option>
+            <option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10+</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="exam-box">
+      <div class="exam-title"><i class="bi bi-2-square-fill me-1"></i> Group 2</div>
+      <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" id="g2na" onchange="togG2()">
+        <label class="form-check-label" for="g2na">Not yet attempted Group 2</label>
+      </div>
+      <div id="g2fields" class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Total Marks Obtained (out of 400)</label>
+          <input type="number" class="form-control" id="g2m" min="0" max="400" placeholder="e.g. 260">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Number of Attempts</label>
+          <select class="form-select" id="g2a">
+            <option value="">Select…</option>
+            <option>1</option><option>2</option><option>3</option><option>4</option>
+            <option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10+</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="nav-btns">
+      <button class="btn-back" onclick="goPrev(2)"><i class="bi bi-arrow-left"></i>&nbsp; Back</button>
+      <button class="btn-next" onclick="goNext(2)">Next &nbsp;<i class="bi bi-arrow-right"></i></button>
+    </div>
+  </div>
+
+  <!-- STEP 3: Personal Details -->
+  <div class="form-card" id="stp3" style="display:none;">
+    <div class="step-title">Personal Information</div>
+    <div class="step-sub">Tell us about yourself so we can reach you</div>
+    <div class="row g-3 mb-3">
+      <div class="col-md-6">
+        <label class="form-label">Full Name *</label>
+        <input type="text" class="form-control" id="fName" placeholder="As per CA records">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Email ID *</label>
+        <input type="email" class="form-control" id="fEmail" placeholder="your@email.com">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Phone Number *</label>
+        <input type="tel" class="form-control" id="fPhone" placeholder="10-digit mobile number" maxlength="10">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Current City *</label>
+        <input type="text" class="form-control" id="fCity" placeholder="e.g. Hyderabad">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">State *</label>
+        <select class="form-select" id="fState">
+          <option value="">Select State…</option>
+          <option>Andhra Pradesh</option><option>Arunachal Pradesh</option><option>Assam</option>
+          <option>Bihar</option><option>Chhattisgarh</option><option>Goa</option>
+          <option>Gujarat</option><option>Haryana</option><option>Himachal Pradesh</option>
+          <option>Jharkhand</option><option>Karnataka</option><option>Kerala</option>
+          <option>Madhya Pradesh</option><option>Maharashtra</option><option>Manipur</option>
+          <option>Meghalaya</option><option>Mizoram</option><option>Nagaland</option>
+          <option>Odisha</option><option>Punjab</option><option>Rajasthan</option>
+          <option>Sikkim</option><option>Tamil Nadu</option><option>Telangana</option>
+          <option>Tripura</option><option>Uttar Pradesh</option><option>Uttarakhand</option>
+          <option>West Bengal</option><option>Delhi (NCT)</option><option>Jammu &amp; Kashmir</option>
+          <option>Ladakh</option><option>Puducherry</option><option>Chandigarh</option>
+          <option>Andaman &amp; Nicobar Islands</option><option>Lakshadweep</option>
+        </select>
+      </div>
+    </div>
+    <div class="mb-2">
+      <label class="form-label">Languages Known *</label>
+      <div class="lang-wrap" id="langWrap"></div>
+    </div>
+    <div class="nav-btns">
+      <button class="btn-back" onclick="goPrev(3)"><i class="bi bi-arrow-left"></i>&nbsp; Back</button>
+      <button class="btn-next" onclick="goNext(3)">Next &nbsp;<i class="bi bi-arrow-right"></i></button>
+    </div>
+  </div>
+
+  <!-- STEP 4: Resume -->
+  <div class="form-card" id="stp4" style="display:none;">
+    <div class="step-title">Upload Your Resume</div>
+    <div class="step-sub">Upload your latest CV — PDF, DOC or DOCX, max 3 MB</div>
+    <div class="upload-zone" id="dropzone" onclick="document.getElementById('resumeInput').click()">
+      <div class="upload-icon"><i class="bi bi-cloud-upload"></i></div>
+      <div class="fw-semibold mb-1">Click to browse or drag &amp; drop here</div>
+      <div class="text-muted" style="font-size:.82rem;">PDF · DOC · DOCX &nbsp;|&nbsp; Max 3 MB</div>
+      <input type="file" id="resumeInput" accept=".pdf,.doc,.docx" style="display:none;" onchange="fileChosen(this)">
+    </div>
+    <div id="filePrev" class="mt-3 p-3 rounded-3 bg-light align-items-center gap-3" style="display:none;">
+      <i class="bi bi-file-earmark-richtext text-primary" style="font-size:2rem;"></i>
+      <div style="flex:1;"><div class="fw-semibold" id="fName2">—</div><div class="text-muted" style="font-size:.8rem;" id="fSize">—</div></div>
+      <button class="btn btn-sm btn-outline-danger" onclick="clearResume()"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="alert alert-info mt-3 py-2" style="font-size:.82rem;"><i class="bi bi-info-circle"></i> Resume upload is recommended but optional.</div>
+    <div class="nav-btns">
+      <button class="btn-back" onclick="goPrev(4)"><i class="bi bi-arrow-left"></i>&nbsp; Back</button>
+      <button class="btn-next" onclick="goNext(4)">Next &nbsp;<i class="bi bi-arrow-right"></i></button>
+    </div>
+  </div>
+
+  <!-- STEP 5: Slot Selection -->
+  <div class="form-card" id="stp5" style="display:none;">
+    <div class="step-title">Choose Interview Time Slot</div>
+    <div class="step-sub">Select a convenient date and time. Slots are first-come, first-served.</div>
+    <div id="slotsContainer"><div class="text-center py-4"><span class="spinner-border spinner-border-sm me-2"></span>Loading available slots…</div></div>
+    <div class="nav-btns">
+      <button class="btn-back" onclick="goPrev(5)"><i class="bi bi-arrow-left"></i>&nbsp; Back</button>
+      <button class="btn-next" onclick="goNext(5)">Review Application &nbsp;<i class="bi bi-arrow-right"></i></button>
+    </div>
+  </div>
+
+  <!-- STEP 6: Review -->
+  <div class="form-card" id="stp6" style="display:none;">
+    <div class="step-title">Review Your Application</div>
+    <div class="step-sub">Verify all details before submitting. You can go back to make changes.</div>
+    <div id="reviewBody"></div>
+    <div class="form-check mt-3">
+      <input class="form-check-input" type="checkbox" id="confirmChk">
+      <label class="form-check-label" for="confirmChk" style="font-size:.88rem;">
+        I confirm all information provided is accurate and complete.
+      </label>
+    </div>
+    <div class="nav-btns">
+      <button class="btn-back" onclick="goPrev(6)"><i class="bi bi-arrow-left"></i>&nbsp; Back</button>
+      <button class="btn-next" onclick="doSubmit()" id="submitBtn"><i class="bi bi-send"></i>&nbsp; Submit Application</button>
+    </div>
+  </div>
+
+  <!-- SUCCESS -->
+  <div class="form-card" id="stpSuccess" style="display:none;">
+    <div class="success-wrap">
+      <div class="success-icon"><i class="bi bi-check-circle-fill"></i></div>
+      <div class="success-title" id="successTitle">Application Submitted!</div>
+      <p class="text-muted mt-2 mb-4" id="successMsg">Your interview slot is reserved. A confirmation has been sent to your email.</p>
+      <div class="alert text-start" id="successInfo" style="border-radius:12px;"></div>
+      <p class="text-muted mt-3" style="font-size:.82rem;">
+        Need help? Contact: <span id="adminContactEmail" class="fw-semibold"></span>
+      </p>
+    </div>
+  </div>
+
+  <div class="text-center text-muted mt-4 pb-2" style="font-size:.78rem;" id="footerFirm">&copy; 2025 Recruitment Portal</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════
+//  CONSTANTS
+// ═══════════════════════════════════════════════════════
+const LANGS = ['English','Hindi','Telugu','Tamil','Kannada','Malayalam','Marathi','Bengali',
+  'Gujarati','Punjabi','Odia','Urdu','Assamese','Maithili','Bhojpuri','Rajasthani','Konkani','Sindhi'];
+const CAT_LABEL = {article:'Article Trainee', semi:'Semi Qualified', qualified:'Qualified CA'};
+const DOM_LABEL  = {statutory:'Statutory Audit', internal:'Internal Audit',
+  direct:'Direct Tax', indirect:'Indirect Tax', others:'Others'};
+
+// ═══════════════════════════════════════════════════════
+//  FIREBASE HELPERS
+// ═══════════════════════════════════════════════════════
+const db = () => firebase.database();
+const ref = (path) => db().ref(path);
+
+// ═══════════════════════════════════════════════════════
+//  FORM STATE
+// ═══════════════════════════════════════════════════════
+let F = {
+  category:'', domains:[], othersText:'',
+  g1m:'', g1a:'', g2m:'', g2a:'', g2na:false,
+  name:'', email:'', phone:'', city:'', state:'', langs:[],
+  resumeB64:'', resumeName:'', resumeSize:'',
+  slot:null, slotSkipped:false  // slotSkipped=true when candidate proceeds without booking
+};
+let curStep = 1;
+let fbSlots  = {};   // live snapshot of slots from Firebase
+
+// ═══════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', async () => {
+  if (!FB_READY) {
+    document.getElementById('setupBanner').style.display = 'block';
+  } else {
+    // Load firm config
+    ref('config').once('value', snap => {
+      const c = snap.val() || {};
+      document.getElementById('hdrFirmName').textContent   = c.firmName  || 'Recruitment Portal';
+      document.getElementById('footerFirm').textContent    = `© ${new Date().getFullYear()} ${c.firmName || 'Recruitment Portal'}`;
+      document.getElementById('adminContactEmail').textContent = c.adminEmail || '';
+      if (c.ejsKey && c.ejsKey.length > 4) emailjs.init(c.ejsKey);
+    });
+
+    // Listen to slots in real-time (so new slots added by admin appear instantly)
+    ref('slots').on('value', snap => {
+      fbSlots = snap.val() || {};
+      if (curStep === 5) renderSlots();
+    });
+  }
+
+  // Build language chips
+  const lw = document.getElementById('langWrap');
+  LANGS.forEach(l => {
+    const d = document.createElement('div');
+    d.className = 'lang-chip'; d.textContent = l;
+    d.onclick = () => togLang(l, d);
+    lw.appendChild(d);
+  });
+
+  // Drag-drop
+  const dz = document.getElementById('dropzone');
+  dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('over'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault(); dz.classList.remove('over');
+    if (e.dataTransfer.files[0]) procFile(e.dataTransfer.files[0]);
+  });
+});
+
+// ═══════════════════════════════════════════════════════
+//  CATEGORY & DOMAIN
+// ═══════════════════════════════════════════════════════
+function selCat(c) {
+  F.category = c;
+  ['article','semi','qualified'].forEach(x => document.getElementById('cat-'+x).classList.remove('selected'));
+  document.getElementById('cat-'+c).classList.add('selected');
+  document.getElementById('domSec').style.display = (c==='semi'||c==='qualified') ? 'block' : 'none';
+  if (c === 'article') { F.domains = []; resetDomChips(); }
+}
+function resetDomChips() {
+  ['statutory','internal','direct','indirect','others'].forEach(d => {
+    document.getElementById('chk-'+d).checked = false;
+    document.getElementById('dc-'+d).classList.remove('selected');
+  });
+}
+function togDom(d, el) {
+  event.stopPropagation();
+  const cb = document.getElementById('chk-'+d);
+  cb.checked = !cb.checked;
+  el.classList.toggle('selected', cb.checked);
+  if (cb.checked) { if (!F.domains.includes(d)) F.domains.push(d); }
+  else F.domains = F.domains.filter(x => x !== d);
+  document.getElementById('othersBox').style.display = F.domains.includes('others') ? 'block' : 'none';
+}
+function togG2() {
+  F.g2na = document.getElementById('g2na').checked;
+  document.getElementById('g2fields').style.display = F.g2na ? 'none' : 'flex';
+}
+function togLang(l, el) {
+  el.classList.toggle('selected');
+  if (F.langs.includes(l)) F.langs = F.langs.filter(x => x !== l);
+  else F.langs.push(l);
+}
+
+// ═══════════════════════════════════════════════════════
+//  FILE UPLOAD
+// ═══════════════════════════════════════════════════════
+function fileChosen(inp) { if (inp.files[0]) procFile(inp.files[0]); }
+function procFile(f) {
+  if (f.size > 3*1024*1024) { showErr('File exceeds 3 MB. Please upload a smaller file.'); return; }
+  const ext = f.name.split('.').pop().toLowerCase();
+  if (!['pdf','doc','docx'].includes(ext)) { showErr('Only PDF, DOC, or DOCX accepted.'); return; }
+  const r = new FileReader();
+  r.onload = e => {
+    F.resumeB64 = e.target.result; F.resumeName = f.name;
+    F.resumeSize = (f.size/1024/1024).toFixed(2)+' MB';
+    document.getElementById('dropzone').style.display = 'none';
+    const fp = document.getElementById('filePrev');
+    fp.style.display = 'flex';
+    document.getElementById('fName2').textContent = f.name;
+    document.getElementById('fSize').textContent  = F.resumeSize;
+  };
+  r.readAsDataURL(f);
+}
+function clearResume() {
+  F.resumeB64 = ''; F.resumeName = ''; F.resumeSize = '';
+  document.getElementById('resumeInput').value = '';
+  document.getElementById('dropzone').style.display = 'block';
+  document.getElementById('filePrev').style.display = 'none';
+}
+
+// ═══════════════════════════════════════════════════════
+//  SLOTS — reads from Firebase fbSlots object
+// ═══════════════════════════════════════════════════════
+function fmt12(t) {
+  if (!t) return '—';
+  const [h, m] = t.split(':').map(Number);
+  return `${h%12||12}:${String(m).padStart(2,'0')} ${h>=12?'PM':'AM'}`;
+}
+function fmtDate(d) {
+  if (!d) return '—';
+  return new Date(d+'T00:00:00').toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+}
+
+function renderSlots() {
+  const box = document.getElementById('slotsContainer');
+  const today = new Date().toISOString().split('T')[0];
+  const slots = Object.entries(fbSlots)
+    .map(([id, s]) => ({...s, id}))
+    .filter(s => s.date >= today)
+    .sort((a,b) => a.date+a.time < b.date+b.time ? -1 : 1);
+
+  if (!slots.length) {
+    box.innerHTML = `
+      <div class="alert alert-warning mb-3">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        <strong>No interview slots are currently available.</strong><br>
+        Don't worry — you can still submit your application and we will contact you to schedule an interview.
+      </div>
+      <div class="alert alert-info" style="border-radius:12px;">
+        <strong><i class="bi bi-ticket-perforated me-2"></i>Submit and Get a Reference Number</strong><br>
+        <p class="mb-2 mt-1" style="font-size:.88rem;">
+          Click the button below to proceed. You will receive a unique <strong>Reference Number</strong> after submission.
+          Keep it safe — you will need it when slots open and you call/WhatsApp us to book your slot.
+        </p>
+        <button class="btn-next mt-1" onclick="skipSlotAndProceed()">
+          <i class="bi bi-arrow-right-circle me-1"></i> Proceed Without Slot — Get Reference Number
+        </button>
+      </div>`;
+    F.slotSkipped = false;  // reset in case user navigated back
+    return;
+  }
+  F.slotSkipped = false; // slots exist, don't skip
+  const grp = {};
+  slots.forEach(s => { if (!grp[s.date]) grp[s.date] = []; grp[s.date].push(s); });
+  let html = '';
+  Object.keys(grp).sort().forEach(date => {
+    html += `<div class="slot-date-hdr"><i class="bi bi-calendar-event me-2"></i>${fmtDate(date)}</div><div class="slot-grid">`;
+    grp[date].forEach(s => {
+      const booked = (s.bookedBy || []).length >= (s.maxCandidates || 1);
+      const sel = F.slot && F.slot.id === s.id;
+      html += `<div class="slot-btn ${booked?'booked':sel?'selected':''}" onclick="${booked?'':'selSlot(\''+s.id+'\')'}" data-sid="${s.id}">
+        <div class="slot-time">${fmt12(s.time)}</div>
+        <div class="slot-dur">${s.duration||30} min</div>
+        ${booked ? '<div style="font-size:.7rem;color:#e57373;">Booked</div>' : ''}
+      </div>`;
+    });
+    html += '</div>';
+  });
+  box.innerHTML = html;
+}
+
+function skipSlotAndProceed() {
+  F.slotSkipped = true;
+  F.slot = null;
+  // Go straight to review (step 6)
+  document.getElementById('stp5').style.display = 'none';
+  curStep = 6;
+  renderReview();
+  document.getElementById('stp6').style.display = 'block';
+  updSteps();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function selSlot(id) {
+  const s = fbSlots[id];
+  if (!s) return;
+  F.slot = {...s, id};
+  document.querySelectorAll('.slot-btn').forEach(b => {
+    b.classList.remove('selected');
+    if (b.dataset.sid === id) b.classList.add('selected');
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+//  REVIEW
+// ═══════════════════════════════════════════════════════
+function renderReview() {
+  const domText = F.domains.map(d => d==='others' ? (F.othersText||'Others') : DOM_LABEL[d]).join(', ') || '—';
+  const g2txt = F.g2na ? 'Not yet attempted' : `${F.g2m}/400 (${F.g2a} attempt${F.g2a>1?'s':''})`;
+  const slotTxt = F.slot ? `${fmtDate(F.slot.date)} at ${fmt12(F.slot.time)}` : '—';
+  document.getElementById('reviewBody').innerHTML = `
+  <div class="rev-sec">
+    <div class="rev-title">🎓 Application Profile</div>
+    <div class="rev-row"><span class="rev-lbl">Category</span><span class="rev-val">${CAT_LABEL[F.category]}</span></div>
+    ${F.domains.length ? `<div class="rev-row"><span class="rev-lbl">Domain(s)</span><span class="rev-val">${domText}</span></div>` : ''}
+  </div>
+  <div class="rev-sec">
+    <div class="rev-title">📚 CA Exam Details</div>
+    <div class="rev-row"><span class="rev-lbl">Group 1</span><span class="rev-val">${F.g1m}/400 &nbsp;|&nbsp; ${F.g1a} attempt${F.g1a>1?'s':''}</span></div>
+    <div class="rev-row"><span class="rev-lbl">Group 2</span><span class="rev-val">${g2txt}</span></div>
+  </div>
+  <div class="rev-sec">
+    <div class="rev-title">👤 Personal Details</div>
+    <div class="rev-row"><span class="rev-lbl">Name</span><span class="rev-val">${F.name}</span></div>
+    <div class="rev-row"><span class="rev-lbl">Email</span><span class="rev-val">${F.email}</span></div>
+    <div class="rev-row"><span class="rev-lbl">Phone</span><span class="rev-val">${F.phone}</span></div>
+    <div class="rev-row"><span class="rev-lbl">Location</span><span class="rev-val">${F.city}, ${F.state}</span></div>
+    <div class="rev-row"><span class="rev-lbl">Languages</span><span class="rev-val">${F.langs.join(', ')||'—'}</span></div>
+  </div>
+  <div class="rev-sec" ${F.slotSkipped?'style="border-color:#ffc107;background:#fffbe6;"':''}>
+    <div class="rev-title">📅 Interview Slot</div>
+    ${F.slotSkipped
+      ? `<div class="rev-row"><span class="rev-lbl">Status</span><span class="rev-val text-warning fw-bold"><i class="bi bi-clock-history me-1"></i>Slot to be confirmed — Reference Number will be issued</span></div>`
+      : `<div class="rev-row"><span class="rev-lbl">Selected</span><span class="rev-val fw-bold" style="color:var(--success);">${slotTxt}</span></div>
+         <div class="rev-row"><span class="rev-lbl">Duration</span><span class="rev-val">${F.slot ? F.slot.duration||30 : 30} minutes</span></div>`
+    }
+  </div>
+  <div class="rev-sec">
+    <div class="rev-title">📎 Resume</div>
+    <div class="rev-row"><span class="rev-lbl">File</span><span class="rev-val">${F.resumeName||'Not uploaded'}</span></div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════════════════
+function goNext(s) {
+  if (!validate(s)) return;
+  document.getElementById('stp'+s).style.display = 'none';
+  curStep = s + 1;
+  const next = document.getElementById('stp'+curStep);
+  if (next) next.style.display = 'block';
+  if (curStep === 5) renderSlots();
+  if (curStep === 6) renderReview();
+  updSteps();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function goPrev(s) {
+  document.getElementById('stp'+s).style.display = 'none';
+  curStep = s - 1;
+  document.getElementById('stp'+curStep).style.display = 'block';
+  updSteps();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function updSteps() {
+  document.querySelectorAll('.step-item').forEach(el => {
+    const s = +el.dataset.s;
+    el.classList.remove('active','done');
+    if (s === curStep) el.classList.add('active');
+    else if (s < curStep) el.classList.add('done');
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+//  VALIDATION
+// ═══════════════════════════════════════════════════════
+function validate(s) {
+  if (s===1) {
+    if (!F.category) { showErr('Please select a category.'); return false; }
+    if ((F.category==='semi'||F.category==='qualified') && !F.domains.length) { showErr('Please select at least one domain.'); return false; }
+    if (F.domains.includes('others') && !document.getElementById('othersVal').value.trim()) { showErr('Please specify the domain.'); return false; }
+    F.othersText = document.getElementById('othersVal').value.trim();
+    return true;
+  }
+  if (s===2) {
+    F.g1m = document.getElementById('g1m').value;
+    F.g1a = document.getElementById('g1a').value;
+    if (!F.g1m || !F.g1a) { showErr('Please enter Group 1 marks and attempts.'); return false; }
+    if (+F.g1m < 0 || +F.g1m > 400) { showErr('Group 1 marks must be 0–400.'); return false; }
+    if (!F.g2na) {
+      F.g2m = document.getElementById('g2m').value;
+      F.g2a = document.getElementById('g2a').value;
+      if (!F.g2m || !F.g2a) { showErr('Enter Group 2 marks and attempts, or tick "Not yet attempted".'); return false; }
+    }
+    return true;
+  }
+  if (s===3) {
+    F.name  = document.getElementById('fName').value.trim();
+    F.email = document.getElementById('fEmail').value.trim();
+    F.phone = document.getElementById('fPhone').value.trim();
+    F.city  = document.getElementById('fCity').value.trim();
+    F.state = document.getElementById('fState').value;
+    if (!F.name||!F.email||!F.phone||!F.city||!F.state) { showErr('Please fill in all required fields.'); return false; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(F.email)) { showErr('Please enter a valid email address.'); return false; }
+    if (!/^\d{10}$/.test(F.phone)) { showErr('Please enter a valid 10-digit phone number.'); return false; }
+    if (!F.langs.length) { showErr('Please select at least one language.'); return false; }
+    return true;
+  }
+  if (s===4) return true;
+  if (s===5) {
+    if (!F.slot && !F.slotSkipped) { showErr('Please select an interview time slot, or click "Proceed Without Slot" if none are available.'); return false; }
+    return true;
+  }
+  return true;
+}
+
+// ═══════════════════════════════════════════════════════
+//  SUBMIT — writes to Firebase
+// ═══════════════════════════════════════════════════════
+async function doSubmit() {
+  if (!document.getElementById('confirmChk').checked) { showErr('Please tick the confirmation checkbox.'); return; }
+  if (!FB_READY) { showErr('Firebase is not configured. Please contact admin.'); return; }
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting…';
+
+  try {
+    const appId = 'APP' + Date.now();
+    const cand = {
+      id: appId, submittedAt: new Date().toISOString(), status: 'pending',
+      category: F.category, domains: F.domains, othersText: F.othersText,
+      g1m: F.g1m, g1a: F.g1a, g2m: F.g2m, g2a: F.g2a, g2na: F.g2na,
+      name: F.name, email: F.email, phone: F.phone,
+      city: F.city, state: F.state, langs: F.langs,
+      resumeB64: F.resumeB64, resumeName: F.resumeName,
+      slotId: F.slot.id, slotDate: F.slot.date,
+      slotTime: F.slot.time, slotDuration: F.slot.duration || 30,
+      adminNotes: ''
+    };
+
+    // Write candidate to Firebase
+    await ref('candidates/'+appId).set(cand);
+
+    // Book the slot — append candidateId to bookedBy array atomically
+    await ref('slots/'+F.slot.id+'/bookedBy').transaction(bookedBy => {
+      if (!bookedBy) bookedBy = [];
+      if (!bookedBy.includes(appId)) bookedBy.push(appId);
+      return bookedBy;
+    });
+
+    // Send confirmation email
+    await sendEmail(cand);
+
+    // Show success
+    document.getElementById('stp6').style.display = 'none';
+    document.getElementById('stpSuccess').style.display = 'block';
+
+    const infoBox = document.getElementById('successInfo');
+    if (F.slotSkipped) {
+      document.getElementById('successTitle').textContent = 'Application Received!';
+      document.getElementById('successMsg').textContent   = 'Your application has been submitted. Please save your Reference Number below.';
+      infoBox.className = 'alert alert-warning text-start';
+      infoBox.innerHTML = `
+        <div style="font-size:1.1rem;font-weight:700;margin-bottom:8px;">
+          <i class="bi bi-ticket-perforated me-2"></i>Your Reference Number
+        </div>
+        <div style="font-size:1.8rem;font-weight:800;letter-spacing:2px;color:var(--primary);margin-bottom:10px;">${appId}</div>
+        <hr style="border-color:rgba(0,0,0,.1);">
+        <strong>Name:</strong> ${cand.name}<br>
+        <strong>Email:</strong> ${cand.email}<br><br>
+        <i class="bi bi-info-circle me-1"></i>
+        <span style="font-size:.85rem;">When interview slots open, contact us with this Reference Number to book your slot. We will reach out to you at <strong>${cand.email}</strong> or <strong>${cand.phone}</strong>.</span>`;
+    } else {
+      infoBox.className = 'alert alert-primary text-start';
+      infoBox.innerHTML = `
+        <strong>Application ID:</strong> ${appId}<br>
+        <strong>Name:</strong> ${cand.name}<br>
+        <strong>Interview:</strong> ${fmtDate(cand.slotDate)} at ${fmt12(cand.slotTime)}<br>
+        <strong>Confirmation sent to:</strong> ${cand.email}`;
+    }
+    window.scrollTo({top:0, behavior:'smooth'});
+
+  } catch (err) {
+    btn.disabled = false; btn.innerHTML = '<i class="bi bi-send"></i>&nbsp; Submit Application';
+    showErr('Submission failed: ' + err.message + '. Please try again.');
+    console.error(err);
+  }
+}
+
+async function sendEmail(c) {
+  try {
+    const cfSnap = await ref('config').once('value');
+    const cf = cfSnap.val() || {};
+    if (!cf.ejsSvc || !cf.ejsTpl || !cf.ejsKey) return;
+    await emailjs.send(cf.ejsSvc, cf.ejsTpl, {
+      to_email: c.email, to_name: c.name, app_id: c.id,
+      slot_date: fmtDate(c.slotDate), slot_time: fmt12(c.slotTime),
+      firm_name: cf.firmName || 'Our Firm'
+    });
+  } catch(e) { console.warn('EmailJS:', e); }
+}
+
+// ═══════════════════════════════════════════════════════
+//  TOAST
+// �
