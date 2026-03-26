@@ -426,8 +426,8 @@ const CAT_LABEL = {article:'Article',semi:'Semi Qualified',qualified:'Qualified 
 const DOM_LABEL = {statutory:'Statutory Audit',internal:'Internal Audit',direct:'Direct Tax',indirect:'Indirect Tax',others:'Others'};
 
 // Password stored in localStorage (device-only, not in Firebase)
-function getPwd()    { return localStorage.getItem('adminPwd') || 'admin123'; }
-function setPwd(p)   { localStorage.setItem('adminPwd', p); }
+function getPwd()    { try { return localStorage.getItem('adminPwd') || 'admin123'; } catch(e) { return 'admin123'; } }
+function setPwd(p)   { try { localStorage.setItem('adminPwd', p); } catch(e) {} }
 
 // ═══════════════════════════════════════════════════════
 //  LOGIN
@@ -438,7 +438,7 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 function doLogin() {
-  const pwd = document.getElementById('loginPwd').value;
+  const pwd = document.getElementById('loginPwd').value.trim();
   if (pwd === getPwd()) {
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('mainApp').style.display = 'block';
