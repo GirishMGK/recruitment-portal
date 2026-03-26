@@ -29,8 +29,13 @@ const FIREBASE_CONFIG = {
   appId:             "1:594218974070:web:b134301f064e2accc6d857"
 };
 
-const FB_READY = FIREBASE_CONFIG.apiKey !== "YOUR_API_KEY";
-if (FB_READY) firebase.initializeApp(FIREBASE_CONFIG);
+let FB_READY = false;
+try {
+  if (FIREBASE_CONFIG.apiKey !== "YOUR_API_KEY" && typeof firebase !== 'undefined') {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    FB_READY = true;
+  }
+} catch(e) { console.warn('Firebase init skipped:', e); }
 </script>
 
 <style>
