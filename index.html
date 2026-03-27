@@ -784,3 +784,29 @@ async function sendEmail(c) {
 // ═══════════════════════════════════════════════════════
 //  TOAST
 // �
+// ═══════════════════════════════════════════════════════
+//  TOAST — show/hide floating message
+// ═══════════════════════════════════════════════════════
+let _toastTimer;
+function showToast(msg, type) {
+  clearTimeout(_toastTimer);
+  let el = document.getElementById('_appToast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = '_appToast';
+    el.className = 'toast-msg';
+    el.style.display = 'none';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.style.background = type === 'error' ? '#dc3545' : type === 'info' ? '#0d6efd' : '#198754';
+  el.style.display = 'block';
+  _toastTimer = setTimeout(() => { el.style.display = 'none'; }, 4000);
+  if (type === 'error') window.scrollTo({top: 0, behavior: 'smooth'});
+}
+function showErr(msg)  { showToast(msg, 'error');   }
+function showSucc(msg) { showToast(msg, 'success'); }
+function showInfo(msg) { showToast(msg, 'info');    }
+</script>
+</body>
+</html>
