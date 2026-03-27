@@ -346,6 +346,13 @@ tr:hover td{background:#fafcff;}
               <div class="text-muted mt-1" style="font-size:.75rem;">Sent when you click Reject in admin</div>
             </div>
           </div>
+          <div class="row g-3 mt-1">
+            <div class="col-md-4">
+              <label class="form-label">Reschedule Email Template ID</label>
+              <input type="text" class="form-control" id="cfgEjsReschTpl" placeholder="template_xxxxxxxx">
+              <div class="text-muted mt-1" style="font-size:.75rem;">Sent when you reschedule a candidate's slot</div>
+            </div>
+          </div>
           <div class="alert alert-secondary mt-3 py-2" style="font-size:.8rem;">
             <strong>Template variables available in all templates:</strong><br>
             <code>&#123;&#123;to_name&#125;&#125;</code> &nbsp;<code>&#123;&#123;to_email&#125;&#125;</code> &nbsp;<code>&#123;&#123;app_id&#125;&#125;</code> &nbsp;<code>&#123;&#123;slot_date&#125;&#125;</code> &nbsp;<code>&#123;&#123;slot_time&#125;&#125;</code> &nbsp;<code>&#123;&#123;firm_name&#125;&#125;</code> &nbsp;<code>&#123;&#123;status&#125;&#125;</code><br><br>
@@ -784,9 +791,11 @@ async function sendStatusEmail(candId, status) {
     const cand = candSnap.val() || {};
     if (!cf.ejsSvc || !cf.ejsKey) return;  // EmailJS not configured
 
-    const templateId = status === 'accepted' ? cf.ejsAccTpl : cf.ejsRejTpl;
+    const templateId = status === 'accepted'    ? cf.ejsAccTpl   :
+                       status === 'rescheduled' ? cf.ejsReschTpl :
+                                                  cf.ejsRejTpl;
     if (!templateId) {
-      showToast(`No ${status} email template configured. Email not sent.`, 'warn');
+      showToast(`No ${status} email template configured in Settings. Email not sent.`, 'warn');
       return;
     }
 
@@ -803,7 +812,8 @@ async function sendStatusEmail(candId, status) {
       status:    status
     });
 
-    showToast(`${status === 'accepted' ? 'Acceptance' : 'Rejection'} email sent to ${cand.email}.`, 'success');
+    const label = status === 'accepted' ? 'Acceptance' : status === 'rescheduled' ? 'Reschedule' : 'Rejection';
+    showToast(`${label} email sent to ${cand.email}.`, 'success');
   } catch(e) {
     console.warn('Status email error:', e);
     showToast('Email could not be sent: ' + e.message, 'danger');
@@ -896,6 +906,9 @@ async function confirmReschedule() {
   await firebase.database().ref().update(updates);
   bootstrap.Modal.getInstance(document.getElementById('reschedModal'))?.hide();
   showToast('Interview rescheduled successfully.', 'success');
+
+  // Send reschedule notification email to candidate
+  if (FB_READY) await sendStatusEmail(cand.id, 'rescheduled');
 }
 
 // ═══════════════════════════════════════════════════════
@@ -907,11 +920,12 @@ async function loadSettings() {
   const c = snap.val() || {};
   document.getElementById('cfgFirm').value      = c.firmName   || '';
   document.getElementById('cfgEmail').value     = c.adminEmail || '';
-  document.getElementById('cfgEjsSvc').value    = c.ejsSvc     || '';
-  document.getElementById('cfgEjsTpl').value    = c.ejsTpl     || '';
-  document.getElementById('cfgEjsAccTpl').value = c.ejsAccTpl  || '';
-  document.getElementById('cfgEjsRejTpl').value = c.ejsRejTpl  || '';
-  document.getElementById('cfgEjsKey').value    = c.ejsKey     || '';
+  document.getElementById('cfgEjsSvc').value      = c.ejsSvc      || '';
+  document.getElementById('cfgEjsTpl').value      = c.ejsTpl      || '';
+  document.getElementById('cfgEjsAccTpl').value   = c.ejsAccTpl   || '';
+  document.getElementById('cfgEjsRejTpl').value   = c.ejsRejTpl   || '';
+  document.getElementById('cfgEjsReschTpl').value = c.ejsReschTpl || '';
+  document.getElementById('cfgEjsKey').value      = c.ejsKey      || '';
   document.getElementById('fbStatus').textContent = 'Connected';
   document.getElementById('fbStatus').className   = 'badge bg-success ms-2';
 }
@@ -936,11 +950,12 @@ async function saveSettings() {
     await firebase.database().ref('config').set({
       firmName:   document.getElementById('cfgFirm').value.trim(),
       adminEmail: document.getElementById('cfgEmail').value.trim(),
-      ejsSvc:     document.getElementById('cfgEjsSvc').value.trim(),
-      ejsTpl:     document.getElementById('cfgEjsTpl').value.trim(),
-      ejsAccTpl:  document.getElementById('cfgEjsAccTpl').value.trim(),
-      ejsRejTpl:  document.getElementById('cfgEjsRejTpl').value.trim(),
-      ejsKey:     document.getElementById('cfgEjsKey').value.trim()
+      ejsSvc:      document.getElementById('cfgEjsSvc').value.trim(),
+      ejsTpl:      document.getElementById('cfgEjsTpl').value.trim(),
+      ejsAccTpl:   document.getElementById('cfgEjsAccTpl').value.trim(),
+      ejsRejTpl:   document.getElementById('cfgEjsRejTpl').value.trim(),
+      ejsReschTpl: document.getElementById('cfgEjsReschTpl').value.trim(),
+      ejsKey:      document.getElementById('cfgEjsKey').value.trim()
     });
   }
 
