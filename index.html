@@ -314,7 +314,7 @@ body{background:var(--bg);font-family:'Segoe UI',system-ui,sans-serif;color:#333
       <div style="flex:1;"><div class="fw-semibold" id="fName2">—</div><div class="text-muted" style="font-size:.8rem;" id="fSize">—</div></div>
       <button class="btn btn-sm btn-outline-danger" onclick="clearResume()"><i class="bi bi-x-lg"></i></button>
     </div>
-    <div class="alert alert-info mt-3 py-2" style="font-size:.82rem;"><i class="bi bi-info-circle"></i> Resume upload is recommended but optional.</div>
+    <div class="alert alert-warning mt-3 py-2" style="font-size:.82rem;"><i class="bi bi-exclamation-triangle"></i> Resume upload is <strong>mandatory</strong>. Please upload your CV to proceed.</div>
     <div class="nav-btns">
       <button class="btn-back" onclick="goPrev(4)"><i class="bi bi-arrow-left"></i>&nbsp; Back</button>
       <button class="btn-next" onclick="goNext(4)">Next &nbsp;<i class="bi bi-arrow-right"></i></button>
@@ -687,7 +687,10 @@ function validate(s) {
     if (!F.langs.length) { showErr('Please select at least one language.'); return false; }
     return true;
   }
-  if (s===4) return true;
+  if (s===4) {
+    if (!F.resumeB64) { showErr('Resume is mandatory. Please upload your CV (PDF, DOC or DOCX) before proceeding.'); return false; }
+    return true;
+  }
   if (s===5) {
     if (!F.slot && !F.slotSkipped) { showErr('Please select an interview time slot, or click "Proceed Without Slot" if none are available.'); return false; }
     return true;
