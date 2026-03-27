@@ -717,20 +717,36 @@ async function doSubmit() {
       name: F.name, email: F.email, phone: F.phone,
       city: F.city, state: F.state, langs: F.langs,
       resumeB64: F.resumeB64, resumeName: F.resumeName,
-      slotId: F.slot.id, slotDate: F.slot.date,
-      slotTime: F.slot.time, slotDuration: F.slot.duration || 30,
+      slotId:       F.slot ? F.slot.id       : null,
+      slotDate:     F.slot ? F.slot.date      : null,
+      slotTime:     F.slot ? F.slot.time      : null,
+      slotDuration: F.slot ? (F.slot.duration || 30) : null,
       adminNotes: ''
     };
 
     // Write candidate to Firebase
     await ref('candidates/'+appId).set(cand);
 
-    // Book the slot — append candidateId to bookedBy array atomically
-    await ref('slots/'+F.slot.id+'/bookedBy').transaction(bookedBy => {
-      if (!bookedBy) bookedBy = [];
-      if (!bookedBy.includes(appId)) bookedBy.push(appId);
-      return bookedBy;
-    });
+    // Book the slot — atomically check capacity before committing
+    if (F.slot && !F.slotSkipped) {
+      const maxC = F.slot.maxCandidates || 1;
+      const bookResult = await ref('slots/'+F.slot.id+'/bookedBy').transaction(bookedBy => {
+        if (!bookedBy) bookedBy = [];
+        // Abort (return undefined) if slot is already full
+        if (!bookedBy.includes(appId) && bookedBy.length >= maxC) return undefined;
+        if (!bookedBy.includes(appId)) bookedBy.push(appId);
+        return bookedBy;
+      });
+
+      // Transaction aborted — slot was filled by someone else between select and submit
+      if (!bookResult.committed) {
+        await ref('candidates/'+appId).remove(); // clean up the partially-written record
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-send me-2"></i>Submit Application';
+        showErr('Sorry, this slot was just taken by another applicant. Please go back to Step 5 and select a different slot.');
+        return;
+      }
+    }
 
     // Send confirmation email
     await sendEmail(cand);
