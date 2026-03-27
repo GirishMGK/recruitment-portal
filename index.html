@@ -83,6 +83,21 @@ body{background:var(--bg);font-family:'Segoe UI',system-ui,sans-serif;color:#333
 .lang-wrap{display:flex;flex-wrap:wrap;gap:9px;}
 .lang-chip{border:2px solid #dee2e6;border-radius:20px;padding:6px 15px;cursor:pointer;font-size:.85rem;transition:all .2s;}
 .lang-chip.selected{background:var(--primary);border-color:var(--primary);color:#fff;}
+/* Portal tabs */
+.portal-tabs{background:#fff;border-bottom:2px solid #e2e8f0;padding:0;}
+.portal-tabs .nav-link{color:#555;font-weight:600;border:none;border-bottom:3px solid transparent;border-radius:0;padding:14px 28px;font-size:.95rem;transition:all .2s;}
+.portal-tabs .nav-link.active{color:var(--primary);border-bottom-color:var(--primary);background:none;}
+.portal-tabs .nav-link:hover:not(.active){color:var(--primary);background:#f8faff;}
+/* Track panel */
+.track-card{background:#fff;border-radius:16px;box-shadow:0 2px 16px rgba(0,0,0,.07);padding:36px;max-width:520px;margin:0 auto;}
+.track-result{background:#f6f9ff;border:1.5px solid #c2d4ed;border-radius:12px;padding:20px;margin-top:20px;}
+.track-label{font-size:.78rem;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;}
+.track-val{font-size:1rem;font-weight:600;color:#222;margin-bottom:12px;}
+.status-badge{display:inline-block;padding:4px 14px;border-radius:20px;font-size:.8rem;font-weight:700;}
+.status-pending{background:#fff3cd;color:#856404;}
+.status-accepted{background:#d1e7dd;color:#0f5132;}
+.status-rescheduled{background:#e2d9f3;color:#432874;}
+.status-rejected{background:#f8d7da;color:#842029;}
 /* Upload */
 .upload-zone{border:2px dashed #c2d4ed;border-radius:12px;padding:38px 20px;text-align:center;cursor:pointer;transition:all .2s;background:#f6f9ff;}
 .upload-zone:hover,.upload-zone.over{border-color:var(--primary);background:#eef3fd;}
@@ -145,6 +160,24 @@ body{background:var(--bg);font-family:'Segoe UI',system-ui,sans-serif;color:#333
 </div>
 <div class="accent-bar"></div>
 
+<!-- Portal Tab Navigation -->
+<div class="portal-tabs">
+  <div class="container">
+    <ul class="nav" id="portalTabs">
+      <li class="nav-item">
+        <a class="nav-link active" href="#" onclick="switchTab('apply');return false;">
+          <i class="bi bi-pencil-square me-2"></i>Apply Now
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#" onclick="switchTab('track');return false;">
+          <i class="bi bi-search me-2"></i>Track / Reschedule
+        </a>
+      </li>
+    </ul>
+  </div>
+</div>
+
 <div class="form-container">
 
   <!-- Firebase Setup Banner (shown if not configured) -->
@@ -154,6 +187,58 @@ body{background:var(--bg);font-family:'Segoe UI',system-ui,sans-serif;color:#333
       This portal is not yet connected to the database. Please ask the admin to complete Firebase setup in <strong>admin.html → Settings → Firebase Setup</strong>.
     </p>
   </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       TRACK / RESCHEDULE PANEL
+  ═══════════════════════════════════════════════════════ -->
+  <div id="trackPanel" style="display:none;">
+    <div class="track-card">
+      <div class="step-title"><i class="bi bi-search me-2"></i>Track / Reschedule</div>
+      <div class="step-sub">Enter the details from your confirmation email to look up your application.</div>
+      <div class="mb-3 mt-4">
+        <label class="form-label fw-semibold">Mobile Number <span class="text-danger">*</span></label>
+        <input type="tel" class="form-control" id="trPhone" placeholder="10-digit mobile number" maxlength="10" oninput="this.value=this.value.replace(/\D/g,'')">
+      </div>
+      <div class="mb-4">
+        <label class="form-label fw-semibold">Application ID <span class="text-danger">*</span></label>
+        <input type="text" class="form-control" id="trAppId" placeholder="e.g. APP1711234567890" oninput="this.value=this.value.toUpperCase()">
+      </div>
+      <button class="btn btn-primary w-100" onclick="lookupApplication()">
+        <i class="bi bi-search me-2"></i>Look Up My Application
+      </button>
+      <div id="trackResult" style="display:none;">
+        <div class="track-result">
+          <div class="track-label">Applicant Name</div>
+          <div class="track-val" id="tr-name">—</div>
+          <div class="track-label">Current Status</div>
+          <div class="track-val"><span id="tr-status-badge" class="status-badge">—</span></div>
+          <div id="tr-slot-block">
+            <div class="track-label">Interview Slot</div>
+            <div class="track-val" id="tr-slot">—</div>
+          </div>
+          <div class="track-label">Category</div>
+          <div class="track-val" id="tr-cat">—</div>
+        </div>
+        <div id="tr-resched-section" style="display:none;margin-top:20px;">
+          <hr>
+          <div class="fw-bold mb-2"><i class="bi bi-calendar-event me-2 text-primary"></i>Request a Reschedule</div>
+          <div class="text-muted mb-3" style="font-size:.88rem;">Select a new interview slot below. Your current slot will be released.</div>
+          <div id="tr-slots-container"><div class="text-center py-3"><span class="spinner-border spinner-border-sm"></span> Loading available slots…</div></div>
+          <button class="btn btn-primary mt-3 w-100" id="tr-resched-btn" onclick="selfReschedule()" disabled>
+            <i class="bi bi-calendar-check me-2"></i>Confirm Reschedule
+          </button>
+          <div class="text-muted mt-2" style="font-size:.78rem;text-align:center;">A confirmation email will be sent to your registered email address after rescheduling.</div>
+        </div>
+        <div id="tr-rejected-msg" style="display:none;margin-top:16px;">
+          <div class="alert alert-danger py-2" style="font-size:.88rem;"><i class="bi bi-x-circle me-2"></i>Your application has been <strong>rejected</strong>. Rescheduling is not available.</div>
+        </div>
+      </div>
+      <div id="trackErr" class="alert alert-danger mt-3 py-2" style="display:none;font-size:.88rem;"></div>
+    </div>
+  </div>
+
+  <!-- Apply panel wrapper -->
+  <div id="applyPanel">
 
   <!-- Step Indicators -->
   <div class="steps-wrap" id="stepsWrap">
@@ -361,6 +446,8 @@ body{background:var(--bg);font-family:'Segoe UI',system-ui,sans-serif;color:#333
       </p>
     </div>
   </div>
+
+  </div><!-- /applyPanel -->
 
   <div class="text-center text-muted mt-4 pb-2" style="font-size:.78rem;" id="footerFirm">&copy; 2025 Recruitment Portal</div>
 </div>
@@ -756,27 +843,15 @@ async function doSubmit() {
     document.getElementById('stpSuccess').style.display = 'block';
 
     const infoBox = document.getElementById('successInfo');
+    const refBlock = `<div style="background:#fff;border-radius:10px;padding:16px 18px;margin-bottom:14px;border:1.5px solid #c2d4ed;"><div style="font-size:.75rem;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">📱 Mobile (Primary Reference)</div><div style="font-size:1.6rem;font-weight:800;letter-spacing:3px;color:var(--primary);">${cand.phone}</div><div style="font-size:.75rem;color:#888;text-transform:uppercase;letter-spacing:.5px;margin:10px 0 4px;">🆔 Application ID (Secondary Reference)</div><div style="font-size:1rem;font-weight:700;font-family:monospace;color:#444;">${appId}</div></div><div class="alert alert-warning py-2 mb-0" style="font-size:.82rem;"><i class="bi bi-exclamation-triangle me-1"></i><strong>Save both above.</strong> You will need them to track your application or request a reschedule via the <strong>"Track / Reschedule"</strong> tab on this page.</div>`;
     if (F.slotSkipped) {
       document.getElementById('successTitle').textContent = 'Application Received!';
-      document.getElementById('successMsg').textContent   = 'Your application has been submitted. Please save your Reference Number below.';
-      infoBox.className = 'alert alert-warning text-start';
-      infoBox.innerHTML = `
-        <div style="font-size:1.1rem;font-weight:700;margin-bottom:8px;">
-          <i class="bi bi-ticket-perforated me-2"></i>Your Reference Number
-        </div>
-        <div style="font-size:1.8rem;font-weight:800;letter-spacing:2px;color:var(--primary);margin-bottom:10px;">${appId}</div>
-        <hr style="border-color:rgba(0,0,0,.1);">
-        <strong>Name:</strong> ${cand.name}<br>
-        <strong>Email:</strong> ${cand.email}<br><br>
-        <i class="bi bi-info-circle me-1"></i>
-        <span style="font-size:.85rem;">When interview slots open, contact us with this Reference Number to book your slot. We will reach out to you at <strong>${cand.email}</strong> or <strong>${cand.phone}</strong>.</span>`;
+      document.getElementById('successMsg').textContent   = 'Your application has been submitted. Save your reference details below.';
+      infoBox.className = 'alert alert-light border text-start';
+      infoBox.innerHTML = refBlock + `<hr style="border-color:#dee2e6;margin:14px 0 10px;"><strong>Name:</strong> ${cand.name}<br><strong>Email:</strong> ${cand.email}<br><br><i class="bi bi-info-circle me-1"></i><span style="font-size:.85rem;">When interview slots open, visit the <strong>Track / Reschedule</strong> tab and use your mobile number + Application ID to book a slot.</span>`;
     } else {
-      infoBox.className = 'alert alert-primary text-start';
-      infoBox.innerHTML = `
-        <strong>Application ID:</strong> ${appId}<br>
-        <strong>Name:</strong> ${cand.name}<br>
-        <strong>Interview:</strong> ${fmtDate(cand.slotDate)} at ${fmt12(cand.slotTime)}<br>
-        <strong>Confirmation sent to:</strong> ${cand.email}`;
+      infoBox.className = 'alert alert-light border text-start';
+      infoBox.innerHTML = refBlock + `<hr style="border-color:#dee2e6;margin:14px 0 10px;"><strong>Name:</strong> ${cand.name}<br><strong>Interview:</strong> ${fmtDate(cand.slotDate)} at ${fmt12(cand.slotTime)}<br><strong>Confirmation sent to:</strong> ${cand.email}`;
     }
     window.scrollTo({top:0, behavior:'smooth'});
 
@@ -803,6 +878,142 @@ async function sendEmail(c) {
 // ═══════════════════════════════════════════════════════
 //  TOAST
 // �
+// ═══════════════════════════════════════════════════════
+//  TAB SWITCHING
+// ═══════════════════════════════════════════════════════
+function switchTab(tab) {
+  const applyPanel = document.getElementById('applyPanel');
+  const trackPanel = document.getElementById('trackPanel');
+  const tabs = document.querySelectorAll('#portalTabs .nav-link');
+  if (tab === 'track') {
+    applyPanel.style.display = 'none'; trackPanel.style.display = 'block';
+    tabs[0].classList.remove('active'); tabs[1].classList.add('active');
+    document.getElementById('trackResult').style.display = 'none';
+    document.getElementById('trackErr').style.display = 'none';
+    document.getElementById('trPhone').value = ''; document.getElementById('trAppId').value = '';
+  } else {
+    applyPanel.style.display = 'block'; trackPanel.style.display = 'none';
+    tabs[0].classList.add('active'); tabs[1].classList.remove('active');
+  }
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ═══════════════════════════════════════════════════════
+//  TRACK — lookup application by appId + phone
+// ═══════════════════════════════════════════════════════
+let _trackedCand = null, _trNewSlotId = null;
+
+async function lookupApplication() {
+  const phone = document.getElementById('trPhone').value.trim();
+  const appId = document.getElementById('trAppId').value.trim().toUpperCase();
+  const errEl = document.getElementById('trackErr');
+  const resEl = document.getElementById('trackResult');
+  errEl.style.display = 'none'; resEl.style.display = 'none';
+  _trackedCand = null; _trNewSlotId = null;
+  if (!/^\d{10}$/.test(phone)) { errEl.textContent = 'Please enter a valid 10-digit mobile number.'; errEl.style.display = 'block'; return; }
+  if (!appId.startsWith('APP')) { errEl.textContent = 'Application ID should start with APP. Check your confirmation email.'; errEl.style.display = 'block'; return; }
+  if (!FB_READY) { errEl.textContent = 'Database not available. Please try again later.'; errEl.style.display = 'block'; return; }
+  const btn = event.currentTarget;
+  btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Looking up…';
+  try {
+    const snap = await firebase.database().ref('candidates/' + appId).once('value');
+    const cand = snap.val();
+    if (!cand) { errEl.textContent = 'No application found for this Application ID. Please check and try again.'; errEl.style.display = 'block'; return; }
+    if (cand.phone !== phone) { errEl.textContent = 'Mobile number does not match our records. Please check and try again.'; errEl.style.display = 'block'; return; }
+    _trackedCand = cand;
+    document.getElementById('tr-name').textContent = cand.name;
+    const catMap = {article:'Article Trainee', semi:'Semi Qualified', qualified:'Qualified CA'};
+    document.getElementById('tr-cat').textContent = catMap[cand.category] || cand.category;
+    const statusEl = document.getElementById('tr-status-badge');
+    const statusMap = {pending:'Pending Review', accepted:'Accepted', rescheduled:'Rescheduled', rejected:'Rejected'};
+    statusEl.textContent = statusMap[cand.status] || cand.status;
+    statusEl.className = 'status-badge status-' + (cand.status || 'pending');
+    const slotBlock = document.getElementById('tr-slot-block');
+    if (cand.slotDate && cand.slotTime) { slotBlock.style.display = 'block'; document.getElementById('tr-slot').textContent = fmtDate(cand.slotDate) + ' at ' + fmt12(cand.slotTime); }
+    else { slotBlock.style.display = 'none'; }
+    const canResched = ['pending','accepted','rescheduled'].includes(cand.status);
+    document.getElementById('tr-resched-section').style.display = canResched ? 'block' : 'none';
+    document.getElementById('tr-rejected-msg').style.display    = cand.status === 'rejected' ? 'block' : 'none';
+    if (canResched) await loadTrackSlots();
+    resEl.style.display = 'block';
+  } catch(e) { errEl.textContent = 'Lookup failed: ' + e.message; errEl.style.display = 'block'; }
+  finally { btn.disabled = false; btn.innerHTML = '<i class="bi bi-search me-2"></i>Look Up My Application'; }
+}
+
+async function loadTrackSlots() {
+  const container = document.getElementById('tr-slots-container');
+  _trNewSlotId = null; document.getElementById('tr-resched-btn').disabled = true;
+  container.innerHTML = '<div class="text-center py-3"><span class="spinner-border spinner-border-sm"></span> Loading slots…</div>';
+  try {
+    const snap = await firebase.database().ref('slots').once('value');
+    const today = new Date().toISOString().split('T')[0];
+    const slots = [];
+    snap.forEach(ch => { const s = {...ch.val(), id: ch.key}; if (s.date >= today) slots.push(s); });
+    slots.sort((a,b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
+    const currentSlotId = _trackedCand ? _trackedCand.slotId : null;
+    const available = slots.filter(s => s.id !== currentSlotId && (s.bookedBy||[]).length < (s.maxCandidates||1));
+    if (!available.length) { container.innerHTML = '<div class="alert alert-warning py-2" style="font-size:.86rem;"><i class="bi bi-calendar-x me-2"></i>No other slots are currently available. Please contact admin to reschedule.</div>'; return; }
+    let html = '<div class="d-flex flex-wrap gap-2 mt-1">';
+    available.forEach(s => { html += `<div class="slot-btn" id="trsl-${s.id}" onclick="selTrackSlot('${s.id}',this)"><div style="font-weight:700;">${shortDate(s.date)}</div><div style="font-size:.82rem;">${fmt12(s.time)} &bull; ${s.duration||30} min</div></div>`; });
+    html += '</div>';
+    container.innerHTML = html;
+  } catch(e) { container.innerHTML = '<div class="alert alert-danger py-2" style="font-size:.86rem;">Could not load slots: ' + e.message + '</div>'; }
+}
+
+function selTrackSlot(id, el) {
+  document.querySelectorAll('#tr-slots-container .slot-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected'); _trNewSlotId = id;
+  document.getElementById('tr-resched-btn').disabled = false;
+}
+
+async function selfReschedule() {
+  if (!_trackedCand || !_trNewSlotId) return;
+  if (!FB_READY) { showToast('Database not available.','error'); return; }
+  const btn = document.getElementById('tr-resched-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Rescheduling…';
+  try {
+    const snap = await firebase.database().ref('slots/' + _trNewSlotId).once('value');
+    const newSl = snap.val();
+    if (!newSl) throw new Error('Selected slot not found.');
+    const cand = _trackedCand, appId = cand.id;
+    if (cand.slotId) {
+      const oldSnap = await firebase.database().ref('slots/'+cand.slotId+'/bookedBy').once('value');
+      await firebase.database().ref('slots/'+cand.slotId+'/bookedBy').set((oldSnap.val()||[]).filter(b=>b!==appId));
+    }
+    const maxC = newSl.maxCandidates || 1;
+    const bookResult = await firebase.database().ref('slots/'+_trNewSlotId+'/bookedBy').transaction(bookedBy => {
+      if (!bookedBy) bookedBy = [];
+      if (!bookedBy.includes(appId) && bookedBy.length >= maxC) return undefined;
+      if (!bookedBy.includes(appId)) bookedBy.push(appId);
+      return bookedBy;
+    });
+    if (!bookResult.committed) {
+      btn.disabled = false; btn.innerHTML = '<i class="bi bi-calendar-check me-2"></i>Confirm Reschedule';
+      showToast('That slot was just taken. Please choose another.','error');
+      await loadTrackSlots(); return;
+    }
+    await firebase.database().ref('candidates/'+appId).update({slotId:newSl.id||_trNewSlotId,slotDate:newSl.date,slotTime:newSl.time,slotDuration:newSl.duration||30,status:'rescheduled'});
+    try {
+      const cfSnap = await firebase.database().ref('config').once('value');
+      const cf = cfSnap.val()||{};
+      if (cf.ejsSvc && cf.ejsReschTpl && cf.ejsKey) {
+        emailjs.init(cf.ejsKey);
+        await emailjs.send(cf.ejsSvc, cf.ejsReschTpl, {to_name:cand.name,to_email:cand.email,app_id:appId,phone:cand.phone,slot_date:fmtDate(newSl.date),slot_time:fmt12(newSl.time),firm_name:cf.firmName||'Our Firm',status:'rescheduled'});
+      }
+    } catch(e){console.warn('Reschedule email:',e);}
+    _trackedCand = {...cand,slotId:_trNewSlotId,slotDate:newSl.date,slotTime:newSl.time,status:'rescheduled'};
+    document.getElementById('tr-slot').textContent = fmtDate(newSl.date)+' at '+fmt12(newSl.time);
+    document.getElementById('tr-slot-block').style.display='block';
+    const sEl = document.getElementById('tr-status-badge');
+    sEl.textContent='Rescheduled'; sEl.className='status-badge status-rescheduled';
+    document.getElementById('tr-resched-section').style.display='none';
+    showToast('Interview rescheduled successfully! A confirmation email has been sent.','success');
+  } catch(e) {
+    btn.disabled=false; btn.innerHTML='<i class="bi bi-calendar-check me-2"></i>Confirm Reschedule';
+    showToast('Reschedule failed: '+e.message,'error');
+  }
+}
+
 // ═══════════════════════════════════════════════════════
 //  TOAST — show/hide floating message
 // ═══════════════════════════════════════════════════════
