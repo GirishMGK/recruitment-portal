@@ -607,3 +607,874 @@ const STATUS_LABEL = {
 //  FIREBASE HELPERS
 // ═══════════════════════════════════════════════════════
 const db  =
+() => (FB_READY && typeof firebase !== 'undefined') ? firebase.database() : null;
+const ref = (path) => { const d = db(); return d ? d.ref(path) : null; };
+
+// ═══════════════════════════════════════════════════════
+//  FORM STATE
+// ══════════════════════════════════════════════════════
+let F = {
+  category: '', domains: [], othersText: '',
+  g1m: '', g1a: '', g2m: '', g2a: '', g2na: false,
+  icaiRegNo: '', joinMonth: '',
+  articleshipType: 'fresh',
+  prevFirm: '', prevPrincipal: '', transferDate: '', monthsCompleted: '',
+  name: '', email: '', phone: '', city: '', state: '', langs: [],
+  resumeB64: '', resumeName: '', resumeSize: ''
+};
+let curStep = 1;
+let fbSlots = {};
+
+// ═══════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', async () => {
+  // Check for ?book= URL parameter (shortlist booking link)
+  const params  = new URLSearchParams(window.location.search);
+  const bookId  = params.get('book');
+
+  if (bookId) {
+    // Hide normal portal UI, show booking panel only
+    document.getElementById('portalTabsWrap').style.display = 'none';
+    document.getElementById('applyPanel').style.display = 'none';
+    document.getElementById('trackPanel').style.display = 'none';
+    document.getElementById('bookSlotPanel').style.display = 'block';
+    await initBookSlotFlow(bookId.toUpperCase());
+    return;
+  }
+
+  // Normal portal flow
+  if (!FB_READY) {
+    document.getElementById('setupBanner').style.display = 'block';
+  } else {
+    ref('config').once('value', snap => {
+      const c = snap.val() || {};
+      document.getElementById('hdrFirmName').textContent      = c.firmName   || 'Recruitment Portal';
+      document.getElementById('footerFirm').textContent       = `© ${new Date().getFullYear()} ${c.firmName || 'Recruitment Portal'}`;
+      document.getElementById('adminContactEmail').textContent = c.adminEmail || '';
+      if (c.ejsKey && c.ejsKey.length > 4) emailjs.init(c.ejsKey);
+    });
+    ref('slots').on('value', snap => { fbSlots = snap.val() || {}; });
+  }
+
+  // Build language chips
+  const lw = document.getElementById('langWrap');
+  LANGS.forEach(l => {
+    const d = document.createElement('div');
+    d.className = 'lang-chip'; d.textContent = l;
+    d.onclick = () => togLang(l, d);
+    lw.appendChild(d);
+  });
+
+  // Drag-drop for resume
+  const dz = document.getElementById('dropzone');
+  dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('over'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault(); dz.classList.remove('over');
+    if (e.dataTransfer.files[0]) procFile(e.dataTransfer.files[0]);
+  });
+});
+
+// ═══════════════════════════════════════════════════════
+//  CATEGORY & DOMAIN
+// ═══════════════════════════════════════════════════════
+function selCat(c) {
+  F.category = c;
+  ['article','semi','qualified'].forEach(x => document.getElementById('cat-'+x).classList.remove('selected'));
+  document.getElementById('cat-'+c).classList.add('selected');
+  // Show domain section for ALL categories
+  document.getElementById('domSec').style.display = 'block';
+  // Show articleship section only for Article
+  document.getElementById('articleshipSec').style.display = c === 'article' ? 'block' : 'none';
+}
+
+function togDom(d, el) {
+  const cb = document.getElementById('chk-'+d);
+  cb.checked = !cb.checked;
+  el.classList.toggle('selected', cb.checked);
+  if (cb.checked) { if (!F.domains.includes(d)) F.domains.push(d); }
+  else F.domains = F.domains.filter(x => x !== d);
+  document.getElementById('othersBox').style.display = F.domains.includes('others') ? 'block' : 'none';
+}
+
+function togG2() {
+  F.g2na = document.getElementById('g2na').checked;
+  document.getElementById('g2fields').style.display = F.g2na ? 'none' : '';
+}
+
+function togLang(l, el) {
+  el.classList.toggle('selected');
+  if (F.langs.includes(l)) F.langs = F.langs.filter(x => x !== l);
+  else F.langs.push(l);
+}
+
+function selArtType(type) {
+  F.articleshipType = type;
+  ['fresh','transfer'].forEach(t => {
+    document.getElementById('artBtn-'+t).classList.toggle('selected', t === type);
+  });
+  document.getElementById('transferDetailsSec').style.display = type === 'transfer' ? 'block' : 'none';
+}
+
+// ═══════════════════════════════════════════════════════
+//  FILE UPLOAD
+// ═══════════════════════════════════════════════════════
+function fileChosen(inp) { if (inp.files[0]) procFile(inp.files[0]); }
+function procFile(f) {
+  if (f.size > 3*1024*1024) { showErr('File exceeds 3 MB. Please upload a smaller file.'); return; }
+  const ext = f.name.split('.').pop().toLowerCase();
+  if (!['pdf','doc','docx'].includes(ext)) { showErr('Only PDF, DOC, or DOCX accepted.'); return; }
+  const r = new FileReader();
+  r.onload = e => {
+    F.resumeB64 = e.target.result; F.resumeName = f.name;
+    F.resumeSize = (f.size/1024/1024).toFixed(2)+' MB';
+    document.getElementById('dropzone').style.display = 'none';
+    const fp = document.getElementById('filePrev');
+    fp.style.cssText = 'display:flex !important;';
+    document.getElementById('fName2').textContent = f.name;
+    document.getElementById('fSize').textContent  = F.resumeSize;
+  };
+  r.readAsDataURL(f);
+}
+function clearResume() {
+  F.resumeB64 = ''; F.resumeName = ''; F.resumeSize = '';
+  document.getElementById('resumeInput').value = '';
+  document.getElementById('dropzone').style.display = 'block';
+  document.getElementById('filePrev').style.cssText = 'display:none !important;';
+}
+
+// ═══════════════════════════════════════════════════════
+//  REVIEW
+// ═══════════════════════════════════════════════════════
+function renderReview() {
+  const domText = F.domains.map(d => d==='others' ? (F.othersText||'Others') : DOM_LABEL[d]).join(', ') || '—';
+  const g2txt   = F.g2na ? 'Not yet attempted' : `${F.g2m}/400 (${F.g2a} attempt${F.g2a>1?'s':''})`;
+  const artInfo  = F.category === 'article'
+    ? `<div class="rev-row"><span class="rev-lbl">Articleship Type</span><span class="rev-val">${F.articleshipType === 'transfer' ? 'Transfer Article' : 'Fresh Article'}</span></div>
+       ${F.articleshipType === 'transfer' && F.prevFirm ? `<div class="rev-row"><span class="rev-lbl">Previous Firm</span><span class="rev-val">${F.prevFirm}</span></div>` : ''}`
+    : '';
+  const joinInfo = F.joinMonth ? `<div class="rev-row"><span class="rev-lbl">Expected Joining</span><span class="rev-val">${new Date(F.joinMonth+'-01').toLocaleDateString('en-IN',{month:'long',year:'numeric'})}</span></div>` : '';
+
+  document.getElementById('reviewBody').innerHTML = `
+  <div class="rev-sec">
+    <div class="rev-title">Application Profile</div>
+    <div class="rev-row"><span class="rev-lbl">Category</span><span class="rev-val">${CAT_LABEL[F.category]}</span></div>
+    ${F.domains.length ? `<div class="rev-row"><span class="rev-lbl">Area(s) of Interest</span><span class="rev-val">${domText}</span></div>` : ''}
+  </div>
+  <div class="rev-sec">
+    <div class="rev-title">CA Exam Details</div>
+    <div class="rev-row"><span class="rev-lbl">Group 1</span><span class="rev-val">${F.g1m}/400 &nbsp;|&nbsp; ${F.g1a} attempt${F.g1a>1?'s':''}</span></div>
+    <div class="rev-row"><span class="rev-lbl">Group 2</span><span class="rev-val">${g2txt}</span></div>
+    ${F.icaiRegNo ? `<div class="rev-row"><span class="rev-lbl">ICAI Reg. No.</span><span class="rev-val">${F.icaiRegNo}</span></div>` : ''}
+    ${artInfo}
+    ${joinInfo}
+  </div>
+  <div class="rev-sec">
+    <div class="rev-title">Personal Details</div>
+    <div class="rev-row"><span class="rev-lbl">Name</span><span class="rev-val">${F.name}</span></div>
+    <div class="rev-row"><span class="rev-lbl">Email</span><span class="rev-val">${F.email}</span></div>
+    <div class="rev-row"><span class="rev-lbl">Phone</span><span class="rev-val">${F.phone}</span></div>
+    <div class="rev-row"><span class="rev-lbl">Location</span><span class="rev-val">${F.city}, ${F.state}</span></div>
+    <div class="rev-row"><span class="rev-lbl">Languages</span><span class="rev-val">${F.langs.join(', ')||'—'}</span></div>
+  </div>
+  <div class="rev-sec">
+    <div class="rev-title">Resume</div>
+    <div class="rev-row"><span class="rev-lbl">File</span><span class="rev-val">${F.resumeName||'Not uploaded'}</span></div>
+  </div>
+  <div class="alert alert-info py-2 mt-2" style="font-size:.83rem;border-radius:10px;">
+    <i class="bi bi-info-circle me-2"></i>
+    <strong>What happens next?</strong> We will review your resume. If shortlisted, you'll receive a confirmation email with a <strong>slot booking link</strong> to schedule your interview.
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════════════════
+function goNext(s) {
+  if (!validate(s)) return;
+  document.getElementById('stp'+s).style.display = 'none';
+  curStep = s + 1;
+  const next = document.getElementById('stp'+curStep);
+  if (next) next.style.display = 'block';
+  if (curStep === 5) renderReview();
+  updSteps();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function goPrev(s) {
+  document.getElementById('stp'+s).style.display = 'none';
+  curStep = s - 1;
+  document.getElementById('stp'+curStep).style.display = 'block';
+  updSteps();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function updSteps() {
+  document.querySelectorAll('.step-item').forEach(el => {
+    const s = +el.dataset.s;
+    el.classList.remove('active','done');
+    if (s === curStep) el.classList.add('active');
+    else if (s < curStep) el.classList.add('done');
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+//  VALIDATION
+// ═══════════════════════════════════════════════════════
+function validate(s) {
+  if (s===1) {
+    if (!F.category) { showErr('Please select a category.'); return false; }
+    if (!F.domains.length) { showErr('Please select at least one area of interest.'); return false; }
+    if (F.domains.includes('others') && !document.getElementById('othersVal').value.trim()) {
+      showErr('Please specify the area of interest.'); return false;
+    }
+    F.othersText = document.getElementById('othersVal').value.trim();
+    return true;
+  }
+  if (s===2) {
+    F.g1m = document.getElementById('g1m').value;
+    F.g1a = document.getElementById('g1a').value;
+    if (!F.g1m || !F.g1a) { showErr('Please enter Group 1 marks and attempts.'); return false; }
+    if (+F.g1m < 0 || +F.g1m > 400) { showErr('Group 1 marks must be 0–400.'); return false; }
+    if (!F.g2na) {
+      F.g2m = document.getElementById('g2m').value;
+      F.g2a = document.getElementById('g2a').value;
+      if (!F.g2m || !F.g2a) { showErr('Enter Group 2 marks and attempts, or tick "Not yet attempted".'); return false; }
+    }
+    F.icaiRegNo = document.getElementById('icaiRegNo').value.trim();
+    F.joinMonth = document.getElementById('joinMonth').value;
+    if (F.category === 'article') {
+      if (F.articleshipType === 'transfer') {
+        F.prevFirm        = document.getElementById('prevFirm').value.trim();
+        F.prevPrincipal   = document.getElementById('prevPrincipal').value.trim();
+        F.transferDate    = document.getElementById('transferDate').value;
+        F.monthsCompleted = document.getElementById('monthsCompleted').value;
+        if (!F.prevFirm) { showErr('Please enter the previous firm name for transfer article.'); return false; }
+      }
+    }
+    return true;
+  }
+  if (s===3) {
+    F.name  = document.getElementById('fName').value.trim();
+    F.email = document.getElementById('fEmail').value.trim();
+    F.phone = document.getElementById('fPhone').value.trim();
+    F.city  = document.getElementById('fCity').value.trim();
+    F.state = document.getElementById('fState').value;
+    if (!F.name||!F.email||!F.phone||!F.city||!F.state) { showErr('Please fill in all required fields.'); return false; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(F.email)) { showErr('Please enter a valid email address.'); return false; }
+    if (!/^\d{10}$/.test(F.phone)) { showErr('Please enter a valid 10-digit phone number.'); return false; }
+    if (!F.langs.length) { showErr('Please select at least one language.'); return false; }
+    return true;
+  }
+  if (s===4) {
+    if (!F.resumeB64) { showErr('Resume is mandatory. Please upload your CV (PDF, DOC or DOCX) before proceeding.'); return false; }
+    return true;
+  }
+  return true;
+}
+
+// ═══════════════════════════════════════════════════════
+//  SUBMIT — writes to Firebase, status = 'applied'
+// ═══════════════════════════════════════════════════════
+async function doSubmit() {
+  if (!document.getElementById('confirmChk').checked) { showErr('Please tick the confirmation checkbox.'); return; }
+  if (!FB_READY) { showErr('Firebase is not configured. Please contact admin.'); return; }
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting…';
+
+  try {
+    const appId = 'APP' + Date.now();
+    const cand = {
+      id: appId, submittedAt: new Date().toISOString(), status: 'applied',
+      category: F.category, domains: F.domains, othersText: F.othersText,
+      g1m: F.g1m, g1a: F.g1a, g2m: F.g2m, g2a: F.g2a, g2na: F.g2na,
+      icaiRegNo: F.icaiRegNo, joinMonth: F.joinMonth,
+      articleshipType: F.category === 'article' ? F.articleshipType : null,
+      prevFirm: F.category === 'article' && F.articleshipType === 'transfer' ? F.prevFirm : null,
+      prevPrincipal: F.category === 'article' && F.articleshipType === 'transfer' ? F.prevPrincipal : null,
+      transferDate: F.category === 'article' && F.articleshipType === 'transfer' ? F.transferDate : null,
+      monthsCompleted: F.category === 'article' && F.articleshipType === 'transfer' ? F.monthsCompleted : null,
+      name: F.name, email: F.email, phone: F.phone,
+      city: F.city, state: F.state, langs: F.langs,
+      resumeB64: F.resumeB64, resumeName: F.resumeName,
+      slotId: null, slotDate: null, slotTime: null, slotDuration: null,
+      adminNotes: '', interviewer: '', score: null, docs: {}
+    };
+
+    await ref('candidates/'+appId).set(cand);
+    await sendConfirmationEmail(cand);
+
+    // Show success
+    document.getElementById('stp5').style.display = 'none';
+    document.getElementById('stpSuccess').style.display = 'block';
+
+    const infoBox = document.getElementById('successInfo');
+    infoBox.className = 'alert alert-light border text-start';
+    infoBox.innerHTML = `
+      <div style="background:#fff;border-radius:10px;padding:16px 18px;margin-bottom:14px;border:1.5px solid #c2d4ed;">
+        <div style="font-size:.75rem;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;"><i class="bi bi-phone me-1"></i>Mobile (Primary Reference)</div>
+        <div style="font-size:1.6rem;font-weight:800;letter-spacing:3px;color:var(--primary);">${cand.phone}</div>
+        <div style="font-size:.75rem;color:#888;text-transform:uppercase;letter-spacing:.5px;margin:10px 0 4px;"><i class="bi bi-hash me-1"></i>Application ID (Secondary Reference)</div>
+        <div style="font-size:1rem;font-weight:700;font-family:monospace;color:#444;">${appId}</div>
+      </div>
+      <div class="alert alert-warning py-2 mb-2" style="font-size:.82rem;border-radius:8px;">
+        <i class="bi bi-exclamation-triangle me-1"></i>
+        <strong>Save both above.</strong> Use them in the <strong>Track</strong> tab to check your status.
+      </div>
+      <strong>Name:</strong> ${cand.name}<br>
+      <strong>Email:</strong> ${cand.email}<br><br>
+      <i class="bi bi-info-circle me-1 text-primary"></i>
+      <span style="font-size:.85rem;">If shortlisted, you will receive an email with a <strong>slot booking link</strong>. You can also book via the <strong>Track</strong> tab once shortlisted.</span>`;
+
+    window.scrollTo({top:0, behavior:'smooth'});
+  } catch(err) {
+    btn.disabled = false; btn.innerHTML = '<i class="bi bi-send"></i>&nbsp; Submit Application';
+    showErr('Submission failed: ' + err.message + '. Please try again.');
+    console.error(err);
+  }
+}
+
+async function sendConfirmationEmail(c) {
+  try {
+    const r = ref('config');
+    if (!r) return;
+    const cfSnap = await r.once('value');
+    const cf = cfSnap.val() || {};
+    if (!cf.ejsSvc || !cf.ejsTpl || !cf.ejsKey) return;
+    await emailjs.send(cf.ejsSvc, cf.ejsTpl, {
+      to_email: c.email, to_name: c.name, app_id: c.id,
+      category: CAT_LABEL[c.category] || c.category,
+      firm_name: cf.firmName || 'Our Firm',
+      status: 'applied'
+    });
+  } catch(e) { console.warn('EmailJS confirmation:', e); }
+}
+
+// ═══════════════════════════════════════════════════════
+//  BOOK SLOT FLOW (?book=APP_ID)
+// ═══════════════════════════════════════════════════════
+let _bookCand    = null;
+let _bookSlotId  = null;
+let _bookAppId   = null;
+
+async function initBookSlotFlow(appId) {
+  _bookAppId = appId;
+  const errEl  = document.getElementById('bookError');
+  const loadEl = document.getElementById('bookLoading');
+  const contEl = document.getElementById('bookContent');
+  const alrdEl = document.getElementById('bookAlreadyBooked');
+
+  if (!FB_READY) {
+    loadEl.style.display = 'none';
+    errEl.textContent = 'Database not available. Please try again later.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  try {
+    // Load firm name
+    const cfSnap = await firebase.database().ref('config').once('value');
+    const cf = cfSnap.val() || {};
+    document.getElementById('hdrFirmName').textContent = cf.firmName || 'Recruitment Portal';
+    if (cf.ejsKey && cf.ejsKey.length > 4) emailjs.init(cf.ejsKey);
+
+    const snap = await firebase.database().ref('candidates/'+appId).once('value');
+    const cand = snap.val();
+
+    loadEl.style.display = 'none';
+
+    if (!cand) {
+      errEl.textContent = 'This booking link is invalid or has expired. Please contact the firm.';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    _bookCand = cand;
+
+    if (cand.status === 'slot_booked' || cand.status === 'rescheduled' || cand.status === 'accepted') {
+      // Already booked
+      document.getElementById('bookedSlotInfo').textContent =
+        cand.slotDate ? `Your interview is on ${fmtDate(cand.slotDate)} at ${fmt12(cand.slotTime)}.` : '';
+      alrdEl.style.display = 'block';
+      return;
+    }
+
+    if (cand.status === 'rejected') {
+      errEl.textContent = 'Your application was not taken forward. This booking link is no longer valid.';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    if (cand.status !== 'shortlisted' && cand.status !== 'waitlisted') {
+      errEl.textContent = 'This booking link is not yet active. You will receive a new link once your resume is reviewed.';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    // Show welcome message
+    document.getElementById('bookWelcomeMsg').textContent = `Congratulations, ${cand.name}!`;
+    document.getElementById('bookWelcomeSub').textContent = `You've been shortlisted for the ${CAT_LABEL[cand.category]||cand.category} role. Please book your interview slot below.`;
+    contEl.style.display = 'block';
+
+    // Load and render slots
+    await renderBookSlots(cf);
+
+  } catch(e) {
+    loadEl.style.display = 'none';
+    errEl.textContent = 'Could not load: ' + e.message;
+    errEl.style.display = 'block';
+  }
+}
+
+async function renderBookSlots(cf) {
+  const box   = document.getElementById('bookSlotsContainer');
+  const today = new Date().toISOString().split('T')[0];
+  try {
+    const snap  = await firebase.database().ref('slots').once('value');
+    const slots = [];
+    snap.forEach(ch => {
+      const s = {...ch.val(), id: ch.key};
+      const full = (s.bookedBy||[]).length >= (s.maxCandidates||1);
+      if (s.date >= today && !full) slots.push(s);
+    });
+    slots.sort((a,b) => a.date+a.time < b.date+b.time ? -1 : 1);
+
+    if (!slots.length) {
+      box.innerHTML = '<div class="alert alert-warning py-2" style="font-size:.88rem;border-radius:10px;"><i class="bi bi-calendar-x me-2"></i>No slots are currently available. Please contact the firm to schedule your interview.</div>';
+      return;
+    }
+
+    const grp = {};
+    slots.forEach(s => { if (!grp[s.date]) grp[s.date] = []; grp[s.date].push(s); });
+    let html = '';
+    Object.keys(grp).sort().forEach(date => {
+      html += `<div class="slot-date-hdr"><i class="bi bi-calendar-event me-2"></i>${fmtDate(date)}</div><div class="slot-grid">`;
+      grp[date].forEach(s => {
+        html += `<div class="slot-btn" id="bsl-${s.id}" onclick="selBookSlot('${s.id}')" data-bid="${s.id}">
+          <div class="slot-time">${fmt12(s.time)}</div>
+          <div class="slot-dur">${s.duration||30} min</div>
+        </div>`;
+      });
+      html += '</div>';
+    });
+    box.innerHTML = html;
+  } catch(e) {
+    box.innerHTML = `<div class="alert alert-danger py-2">${e.message}</div>`;
+  }
+}
+
+function selBookSlot(id) {
+  document.querySelectorAll('#bookSlotsContainer .slot-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('bsl-'+id)?.classList.add('selected');
+  _bookSlotId = id;
+  document.getElementById('bookConfirmBtn').disabled = false;
+}
+
+async function confirmBookSlot() {
+  if (!_bookCand || !_bookSlotId || !_bookAppId) return;
+  const btn = document.getElementById('bookConfirmBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Booking…';
+
+  try {
+    const slSnap = await firebase.database().ref('slots/'+_bookSlotId).once('value');
+    const sl = slSnap.val();
+    if (!sl) throw new Error('Selected slot not found.');
+
+    const maxC = sl.maxCandidates || 1;
+    const bookResult = await firebase.database().ref('slots/'+_bookSlotId+'/bookedBy').transaction(bookedBy => {
+      if (!bookedBy) bookedBy = [];
+      if (!bookedBy.includes(_bookAppId) && bookedBy.length >= maxC) return undefined; // abort if full
+      if (!bookedBy.includes(_bookAppId)) bookedBy.push(_bookAppId);
+      return bookedBy;
+    });
+
+    if (!bookResult.committed) {
+      btn.disabled = false; btn.innerHTML = '<i class="bi bi-calendar-check me-2"></i>Confirm Slot Booking';
+      showToast('That slot was just taken. Please choose another.', 'error');
+      await renderBookSlots({});
+      return;
+    }
+
+    await firebase.database().ref('candidates/'+_bookAppId).update({
+      slotId: sl.id || _bookSlotId,
+      slotDate: sl.date, slotTime: sl.time,
+      slotDuration: sl.duration || 30,
+      status: 'slot_booked'
+    });
+
+    // Send slot confirmation email
+    try {
+      const cfSnap = await firebase.database().ref('config').once('value');
+      const cf = cfSnap.val() || {};
+      if (cf.ejsSvc && cf.ejsSlotTpl && cf.ejsKey) {
+        await emailjs.send(cf.ejsSvc, cf.ejsSlotTpl, {
+          to_name: _bookCand.name, to_email: _bookCand.email,
+          app_id: _bookAppId,
+          slot_date: fmtDate(sl.date), slot_time: fmt12(sl.time),
+          firm_name: cf.firmName || 'Our Firm', status: 'slot_booked'
+        });
+      }
+    } catch(e) { console.warn('Slot email:', e); }
+
+    // Show success in panel
+    document.getElementById('bookContent').style.display = 'none';
+    const alrdEl = document.getElementById('bookAlreadyBooked');
+    alrdEl.querySelector('strong').textContent = 'Interview Slot Confirmed!';
+    document.getElementById('bookedSlotInfo').textContent = `Your interview is on ${fmtDate(sl.date)} at ${fmt12(sl.time)}. A confirmation email has been sent.`;
+    alrdEl.style.display = 'block';
+    showToast('Slot booked successfully!', 'success');
+
+  } catch(e) {
+    btn.disabled = false; btn.innerHTML = '<i class="bi bi-calendar-check me-2"></i>Confirm Slot Booking';
+    showToast('Booking failed: ' + e.message, 'error');
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  TAB SWITCHING
+// ═══════════════════════════════════════════════════════
+function switchTab(tab) {
+  const applyPanel = document.getElementById('applyPanel');
+  const trackPanel = document.getElementById('trackPanel');
+  const tabs = document.querySelectorAll('#portalTabs .nav-link');
+  if (tab === 'track') {
+    applyPanel.style.display = 'none';
+    trackPanel.style.display = 'block';
+    tabs[0].classList.remove('active');
+    tabs[1].classList.add('active');
+    document.getElementById('trackResult').style.display = 'none';
+    document.getElementById('trackErr').style.display = 'none';
+    document.getElementById('trPhone').value = '';
+    document.getElementById('trAppId').value = '';
+  } else {
+    applyPanel.style.display = 'block';
+    trackPanel.style.display = 'none';
+    tabs[0].classList.add('active');
+    tabs[1].classList.remove('active');
+  }
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+// ═══════════════════════════════════════════════════════
+//  TRACK — lookup by mobile + appId
+// ═══════════════════════════════════════════════════════
+let _trackedCand = null;
+let _trNewSlotId = null;
+let _trBookSlotId = null;
+
+async function lookupApplication() {
+  const phone = document.getElementById('trPhone').value.trim();
+  const appId = document.getElementById('trAppId').value.trim().toUpperCase();
+  const errEl = document.getElementById('trackErr');
+  const resEl = document.getElementById('trackResult');
+
+  errEl.style.display = 'none'; resEl.style.display = 'none';
+  _trackedCand = null; _trNewSlotId = null; _trBookSlotId = null;
+
+  if (!/^\d{10}$/.test(phone)) { errEl.textContent = 'Please enter a valid 10-digit mobile number.'; errEl.style.display = 'block'; return; }
+  if (!appId.startsWith('APP')) { errEl.textContent = 'Application ID should start with APP. Check your confirmation email.'; errEl.style.display = 'block'; return; }
+  if (!FB_READY) { errEl.textContent = 'Database not available. Please try again later.'; errEl.style.display = 'block'; return; }
+
+  const btn = document.querySelector('#trackPanel button');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Looking up…';
+
+  try {
+    const snap = await firebase.database().ref('candidates/'+appId).once('value');
+    const cand = snap.val();
+    if (!cand) { errEl.textContent = 'No application found for this Application ID.'; errEl.style.display = 'block'; return; }
+    if (cand.phone !== phone) { errEl.textContent = 'Mobile number does not match our records.'; errEl.style.display = 'block'; return; }
+
+    _trackedCand = cand;
+    document.getElementById('tr-name').textContent = cand.name;
+    const catMap = {article:'Article Trainee', semi:'Semi Qualified', qualified:'Qualified CA'};
+    document.getElementById('tr-cat').textContent = catMap[cand.category] || cand.category;
+
+    // Status badge
+    const statusEl = document.getElementById('tr-status-badge');
+    statusEl.textContent = STATUS_LABEL[cand.status] || cand.status;
+    statusEl.className = 'status-badge status-' + (cand.status || 'applied');
+
+    // Slot info
+    const slotBlock = document.getElementById('tr-slot-block');
+    if (cand.slotDate && cand.slotTime) {
+      slotBlock.style.display = 'block';
+      document.getElementById('tr-slot').textContent = fmtDate(cand.slotDate) + ' at ' + fmt12(cand.slotTime);
+    } else { slotBlock.style.display = 'none'; }
+
+    // Show appropriate action section
+    document.getElementById('tr-shortlist-section').style.display = 'none';
+    document.getElementById('tr-resched-section').style.display = 'none';
+    document.getElementById('tr-waitlist-msg').style.display = 'none';
+    document.getElementById('tr-rejected-msg').style.display = 'none';
+
+    if (cand.status === 'shortlisted') {
+      document.getElementById('tr-shortlist-section').style.display = 'block';
+    } else if (['slot_booked','rescheduled','accepted'].includes(cand.status) && cand.slotDate) {
+      document.getElementById('tr-resched-section').style.display = 'block';
+      await loadTrackSlots();
+    } else if (cand.status === 'waitlisted') {
+      document.getElementById('tr-waitlist-msg').style.display = 'block';
+    } else if (cand.status === 'rejected') {
+      document.getElementById('tr-rejected-msg').style.display = 'block';
+    }
+
+    resEl.style.display = 'block';
+  } catch(e) {
+    errEl.textContent = 'Lookup failed: ' + e.message; errEl.style.display = 'block';
+  } finally {
+    btn.disabled = false; btn.innerHTML = '<i class="bi bi-search me-2"></i>Look Up My Application';
+  }
+}
+
+// Inline slot booker (from Track tab, for shortlisted candidates)
+async function openInlineSlotBooker() {
+  const inlineDiv = document.getElementById('tr-inline-slots');
+  inlineDiv.style.display = 'block';
+  const container = document.getElementById('tr-slots-container-inline');
+  container.innerHTML = '<div class="text-center py-3"><span class="spinner-border spinner-border-sm"></span></div>';
+  _trBookSlotId = null;
+  document.getElementById('tr-book-btn').disabled = true;
+
+  const today = new Date().toISOString().split('T')[0];
+  const snap = await firebase.database().ref('slots').once('value');
+  const slots = [];
+  snap.forEach(ch => {
+    const s = {...ch.val(), id: ch.key};
+    const full = (s.bookedBy||[]).length >= (s.maxCandidates||1);
+    if (s.date >= today && !full) slots.push(s);
+  });
+  slots.sort((a,b) => a.date+a.time < b.date+b.time ? -1 : 1);
+
+  if (!slots.length) {
+    container.innerHTML = '<div class="alert alert-warning py-2" style="font-size:.86rem;">No slots available right now. Please wait for the firm to add slots or use the booking link from your email.</div>';
+    return;
+  }
+  let html = '<div class="d-flex flex-wrap gap-2">';
+  slots.forEach(s => {
+    html += `<div class="slot-btn" id="trib-${s.id}" onclick="selTrackBookSlot('${s.id}',this)">
+      <div style="font-weight:700;">${shortDate(s.date)}</div>
+      <div style="font-size:.8rem;">${fmt12(s.time)} &bull; ${s.duration||30}min</div>
+    </div>`;
+  });
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function selTrackBookSlot(id, el) {
+  document.querySelectorAll('#tr-slots-container-inline .slot-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  _trBookSlotId = id;
+  document.getElementById('tr-book-btn').disabled = false;
+}
+
+async function trackBookSlot() {
+  if (!_trackedCand || !_trBookSlotId) return;
+  const btn = document.getElementById('tr-book-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Booking…';
+
+  try {
+    const slSnap = await firebase.database().ref('slots/'+_trBookSlotId).once('value');
+    const sl = slSnap.val();
+    if (!sl) throw new Error('Slot not found.');
+
+    const maxC = sl.maxCandidates || 1;
+    const bookResult = await firebase.database().ref('slots/'+_trBookSlotId+'/bookedBy').transaction(bookedBy => {
+      if (!bookedBy) bookedBy = [];
+      if (!bookedBy.includes(_trackedCand.id) && bookedBy.length >= maxC) return undefined;
+      if (!bookedBy.includes(_trackedCand.id)) bookedBy.push(_trackedCand.id);
+      return bookedBy;
+    });
+    if (!bookResult.committed) {
+      btn.disabled = false; btn.innerHTML = '<i class="bi bi-calendar-check me-2"></i>Confirm Slot Booking';
+      showToast('That slot was just taken. Please choose another.', 'error');
+      await openInlineSlotBooker();
+      return;
+    }
+    await firebase.database().ref('candidates/'+_trackedCand.id).update({
+      slotId: sl.id || _trBookSlotId, slotDate: sl.date, slotTime: sl.time,
+      slotDuration: sl.duration||30, status: 'slot_booked'
+    });
+    // Email
+    try {
+      const cfSnap = await firebase.database().ref('config').once('value');
+      const cf = cfSnap.val() || {};
+      if (cf.ejsSvc && cf.ejsSlotTpl && cf.ejsKey) {
+        await emailjs.send(cf.ejsSvc, cf.ejsSlotTpl, {
+          to_name: _trackedCand.name, to_email: _trackedCand.email,
+          app_id: _trackedCand.id, slot_date: fmtDate(sl.date), slot_time: fmt12(sl.time),
+          firm_name: cf.firmName || 'Our Firm', status: 'slot_booked'
+        });
+      }
+    } catch(e) { console.warn('Email:', e); }
+
+    // Update UI
+    _trackedCand = {..._trackedCand, slotDate: sl.date, slotTime: sl.time, status: 'slot_booked'};
+    document.getElementById('tr-slot').textContent = fmtDate(sl.date)+' at '+fmt12(sl.time);
+    document.getElementById('tr-slot-block').style.display = 'block';
+    const stEl = document.getElementById('tr-status-badge');
+    stEl.textContent = STATUS_LABEL['slot_booked']; stEl.className = 'status-badge status-slot_booked';
+    document.getElementById('tr-shortlist-section').style.display = 'none';
+    showToast('Interview slot booked! Confirmation email sent.', 'success');
+  } catch(e) {
+    btn.disabled = false; btn.innerHTML = '<i class="bi bi-calendar-check me-2"></i>Confirm Slot Booking';
+    showToast('Booking failed: '+e.message, 'error');
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  RESCHEDULE (for slot_booked candidates via Track tab)
+// ═══════════════════════════════════════════════════════
+async function loadTrackSlots() {
+  const container = document.getElementById('tr-slots-container');
+  _trNewSlotId = null;
+  document.getElementById('tr-resched-btn').disabled = true;
+  container.innerHTML = '<div class="text-center py-3"><span class="spinner-border spinner-border-sm"></span> Loading slots…</div>';
+
+  try {
+    const snap = await firebase.database().ref('slots').once('value');
+    const today = new Date().toISOString().split('T')[0];
+    const slots = [];
+    snap.forEach(ch => {
+      const s = {...ch.val(), id: ch.key};
+      if (s.date >= today) slots.push(s);
+    });
+    slots.sort((a,b) => a.date.localeCompare(b.date)||a.time.localeCompare(b.time));
+
+    const currentSlotId = _trackedCand ? _trackedCand.slotId : null;
+    const available = slots.filter(s => {
+      if (s.id === currentSlotId) return false;
+      return (s.bookedBy||[]).length < (s.maxCandidates||1);
+    });
+
+    if (!available.length) {
+      container.innerHTML = '<div class="alert alert-warning py-2" style="font-size:.86rem;">No other slots available. Please contact admin to reschedule.</div>';
+      return;
+    }
+    let html = '<div class="d-flex flex-wrap gap-2 mt-1">';
+    available.forEach(s => {
+      html += `<div class="slot-btn" id="trsl-${s.id}" onclick="selTrackSlot('${s.id}',this)">
+        <div style="font-weight:700;">${shortDate(s.date)}</div>
+        <div style="font-size:.82rem;">${fmt12(s.time)} &bull; ${s.duration||30} min</div>
+      </div>`;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+  } catch(e) {
+    container.innerHTML = `<div class="alert alert-danger py-2">Could not load slots: ${e.message}</div>`;
+  }
+}
+
+function selTrackSlot(id, el) {
+  document.querySelectorAll('#tr-slots-container .slot-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  _trNewSlotId = id;
+  document.getElementById('tr-resched-btn').disabled = false;
+}
+
+async function selfReschedule() {
+  if (!_trackedCand || !_trNewSlotId) return;
+  if (!FB_READY) { showErr('Database not available.'); return; }
+
+  const btn = document.getElementById('tr-resched-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Rescheduling…';
+
+  try {
+    const snap  = await firebase.database().ref('slots/'+_trNewSlotId).once('value');
+    const newSl = snap.val();
+    if (!newSl) throw new Error('Selected slot not found.');
+
+    const cand  = _trackedCand;
+    const appId = cand.id;
+
+    // Release old slot
+    if (cand.slotId) {
+      const oldSnap = await firebase.database().ref('slots/'+cand.slotId+'/bookedBy').once('value');
+      const oldBooked = (oldSnap.val()||[]).filter(b => b !== appId);
+      await firebase.database().ref('slots/'+cand.slotId+'/bookedBy').set(oldBooked);
+    }
+
+    // Book new slot atomically
+    const maxC = newSl.maxCandidates || 1;
+    const bookResult = await firebase.database().ref('slots/'+_trNewSlotId+'/bookedBy').transaction(bookedBy => {
+      if (!bookedBy) bookedBy = [];
+      if (!bookedBy.includes(appId) && bookedBy.length >= maxC) return undefined;
+      if (!bookedBy.includes(appId)) bookedBy.push(appId);
+      return bookedBy;
+    });
+
+    if (!bookResult.committed) {
+      btn.disabled = false; btn.innerHTML = '<i class="bi bi-calendar-check me-2"></i>Confirm Reschedule';
+      showToast('That slot was just taken. Please choose another.', 'error');
+      await loadTrackSlots();
+      return;
+    }
+
+    await firebase.database().ref('candidates/'+appId).update({
+      slotId: newSl.id||_trNewSlotId, slotDate: newSl.date, slotTime: newSl.time,
+      slotDuration: newSl.duration||30, status: 'rescheduled'
+    });
+
+    // Send reschedule email
+    try {
+      const cfSnap = await firebase.database().ref('config').once('value');
+      const cf = cfSnap.val()||{};
+      if (cf.ejsSvc && cf.ejsReschTpl && cf.ejsKey) {
+        emailjs.init(cf.ejsKey);
+        await emailjs.send(cf.ejsSvc, cf.ejsReschTpl, {
+          to_name: cand.name, to_email: cand.email, app_id: appId,
+          slot_date: fmtDate(newSl.date), slot_time: fmt12(newSl.time),
+          firm_name: cf.firmName||'Our Firm', status: 'rescheduled'
+        });
+      }
+    } catch(e) { console.warn('Reschedule email:', e); }
+
+    _trackedCand = {...cand, slotId:_trNewSlotId, slotDate:newSl.date, slotTime:newSl.time, status:'rescheduled'};
+    document.getElementById('tr-slot').textContent = fmtDate(newSl.date)+' at '+fmt12(newSl.time);
+    document.getElementById('tr-slot-block').style.display = 'block';
+    const stEl = document.getElementById('tr-status-badge');
+    stEl.textContent = STATUS_LABEL['rescheduled']; stEl.className = 'status-badge status-rescheduled';
+    document.getElementById('tr-resched-section').style.display = 'none';
+    showToast('Interview rescheduled successfully! Confirmation email sent.', 'success');
+  } catch(e) {
+    btn.disabled = false; btn.innerHTML = '<i class="bi bi-calendar-check me-2"></i>Confirm Reschedule';
+    showToast('Reschedule failed: '+e.message, 'error');
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  DATE / TIME HELPERS
+// ═══════════════════════════════════════════════════════
+function fmt12(t) {
+  if (!t) return '—';
+  const [h, m] = t.split(':').map(Number);
+  return `${h%12||12}:${String(m).padStart(2,'0')} ${h>=12?'PM':'AM'}`;
+}
+function fmtDate(d) {
+  if (!d) return '—';
+  return new Date(d+'T00:00:00').toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+}
+function shortDate(d) {
+  if (!d) return '—';
+  return new Date(d+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+}
+
+// ═══════════════════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════════════════
+let _toastTimer;
+function showToast(msg, type) {
+  clearTimeout(_toastTimer);
+  let el = document.getElementById('_appToast');
+  if (!el) { el = document.createElement('div'); el.id = '_appToast'; el.className = 'toast-msg'; el.style.display='none'; document.body.appendChild(el); }
+  el.textContent = msg;
+  el.style.background = type==='error' ? '#dc3545' : type==='info' ? '#0d6efd' : '#198754';
+  el.style.display = 'block';
+  _toastTimer = setTimeout(() => { el.style.display='none'; }, 4500);
+  if (type==='error') window.scrollTo({top:0, behavior:'smooth'});
+}
+function showErr(msg)  { showToast(msg,'error');   }
+function showSucc(msg) { showToast(msg,'success'); }
+function showInfo(msg) { showToast(msg,'info');    }
+</script>
+</body>
+</html>
