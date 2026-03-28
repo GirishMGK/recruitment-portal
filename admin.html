@@ -6,19 +6,10 @@
 <title>Admin Panel — Recruitment Portal</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-
-<!-- ═══════════════════════════════════════════════════════
-     FIREBASE SDK
-═══════════════════════════════════════════════════════ -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
 <script>
-// ═══════════════════════════════════════════════════════
-//  FIREBASE CONFIG — Connected to your Recruitment project
-// ═══════════════════════════════════════════════════════
 const FIREBASE_CONFIG = {
   apiKey:            "AIzaSyDhnlJfDrYmXmTnF3g4D-cxQF9zN8iT2dE",
   authDomain:        "recruitment-8c7e0.firebaseapp.com",
@@ -28,7 +19,6 @@ const FIREBASE_CONFIG = {
   messagingSenderId: "594218974070",
   appId:             "1:594218974070:web:b134301f064e2accc6d857"
 };
-
 let FB_READY = false;
 try {
   if (FIREBASE_CONFIG.apiKey !== "YOUR_API_KEY" && typeof firebase !== 'undefined') {
@@ -40,6 +30,7 @@ try {
 
 <style>
 :root{--primary:#1B3D6F;--primary-light:#2a5498;--accent:#C9A84C;--success:#198754;--bg:#f2f5fa;}
+*{box-sizing:border-box;}
 body{background:var(--bg);font-family:'Segoe UI',system-ui,sans-serif;color:#333;margin:0;}
 .top-bar{background:linear-gradient(135deg,var(--primary) 0%,var(--primary-light) 100%);color:#fff;padding:14px 0;box-shadow:0 2px 10px rgba(0,0,0,.15);}
 .accent-bar{height:4px;background:linear-gradient(90deg,var(--accent),#f0d080);}
@@ -59,10 +50,10 @@ body{background:var(--bg);font-family:'Segoe UI',system-ui,sans-serif;color:#333
 .page-title{font-size:1.1rem;font-weight:700;color:var(--primary);margin-bottom:3px;}
 .page-sub{color:#777;font-size:.83rem;margin-bottom:18px;}
 /* Stats */
-.stat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:24px;}
-.stat-card{background:#fff;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.06);padding:18px 16px;text-align:center;}
-.stat-num{font-size:2rem;font-weight:800;line-height:1;}
-.stat-lbl{font-size:.78rem;color:#888;margin-top:5px;}
+.stat-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:24px;}
+.stat-card{background:#fff;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.06);padding:16px 12px;text-align:center;}
+.stat-num{font-size:1.9rem;font-weight:800;line-height:1;}
+.stat-lbl{font-size:.72rem;color:#888;margin-top:5px;}
 /* Table */
 .tbl-wrap{overflow-x:auto;}
 table{width:100%;border-collapse:collapse;font-size:.84rem;}
@@ -70,8 +61,11 @@ th{background:#f0f4fa;color:var(--primary);font-weight:700;padding:10px 12px;tex
 td{padding:10px 12px;border-bottom:1px solid #f0f0f0;vertical-align:middle;}
 tr:hover td{background:#fafcff;}
 /* Status badges */
+.badge-applied{background:#e2e3e5;color:#41464b;border-radius:20px;padding:3px 10px;font-size:.77rem;font-weight:600;white-space:nowrap;}
 .badge-pending{background:#fff3cd;color:#856404;border-radius:20px;padding:3px 10px;font-size:.77rem;font-weight:600;white-space:nowrap;}
 .badge-shortlisted{background:#cfe2ff;color:#084298;border-radius:20px;padding:3px 10px;font-size:.77rem;font-weight:600;}
+.badge-slot_booked{background:#d1e7dd;color:#0f5132;border-radius:20px;padding:3px 10px;font-size:.77rem;font-weight:600;}
+.badge-waitlisted{background:#fff3cd;color:#856404;border-radius:20px;padding:3px 10px;font-size:.77rem;font-weight:600;}
 .badge-accepted{background:#d1e7dd;color:#0f5132;border-radius:20px;padding:3px 10px;font-size:.77rem;font-weight:600;}
 .badge-rejected{background:#f8d7da;color:#842029;border-radius:20px;padding:3px 10px;font-size:.77rem;font-weight:600;}
 .badge-rescheduled{background:#e2d9f3;color:#432874;border-radius:20px;padding:3px 10px;font-size:.77rem;font-weight:600;}
@@ -85,6 +79,25 @@ tr:hover td{background:#fafcff;}
 .det-val{font-weight:500;text-align:right;max-width:65%;}
 .score-bar-wrap{background:#e9ecef;border-radius:99px;height:8px;margin-top:4px;}
 .score-bar{height:8px;border-radius:99px;background:linear-gradient(90deg,var(--primary),var(--accent));}
+/* Star rating */
+.star-group{display:flex;gap:6px;align-items:center;}
+.star-btn{font-size:1.3rem;cursor:pointer;line-height:1;transition:transform .1s;color:#dee2e6;background:none;border:none;padding:0;}
+.star-btn.active,.star-btn:hover{color:#f0c040;}
+.star-btn:hover ~ .star-btn{color:#dee2e6 !important;}
+/* Document checklist */
+.doc-check-item{display:flex;align-items:center;gap:10px;padding:8px 12px;background:#f8f9fa;border-radius:8px;margin-bottom:6px;font-size:.86rem;}
+.doc-check-item input{accent-color:var(--success);width:16px;height:16px;}
+.doc-check-item.checked{background:#d1e7dd;}
+/* Progress bar */
+.doc-progress{height:8px;border-radius:99px;background:#e9ecef;margin-bottom:12px;}
+.doc-progress-bar{height:8px;border-radius:99px;background:linear-gradient(90deg,var(--success),#20c997);transition:width .4s;}
+/* Bulk action toolbar */
+.bulk-toolbar{background:#eef3fd;border:1.5px solid #c2d4ed;border-radius:10px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+/* Slot mini picker */
+.slot-mini-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;}
+.slot-mini-btn{border:2px solid #dee2e6;border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;font-size:.82rem;transition:all .2s;background:#fff;}
+.slot-mini-btn:hover{border-color:var(--primary);background:#eef3fd;}
+.slot-mini-btn.selected{background:var(--primary);border-color:var(--primary);color:#fff;}
 /* Buttons */
 .btn-primary-sm{background:var(--primary);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:.82rem;font-weight:600;cursor:pointer;}
 .btn-primary-sm:hover{background:var(--primary-light);color:#fff;}
@@ -92,25 +105,25 @@ tr:hover td{background:#fafcff;}
 .btn-danger-sm{background:#dc3545;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:.82rem;font-weight:600;cursor:pointer;}
 .btn-warn-sm{background:#fd7e14;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:.82rem;font-weight:600;cursor:pointer;}
 .btn-sec-sm{background:#6c757d;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:.82rem;font-weight:600;cursor:pointer;}
+.btn-info-sm{background:#0dcaf0;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:.82rem;font-weight:600;cursor:pointer;}
+.btn-purple-sm{background:#6f42c1;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:.82rem;font-weight:600;cursor:pointer;}
 .action-bar{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;}
 /* Form */
 .form-label{font-weight:600;font-size:.85rem;color:#444;margin-bottom:4px;}
 .form-control,.form-select{border-radius:8px;border:1.5px solid #dee2e6;font-size:.88rem;padding:8px 12px;}
 .form-control:focus,.form-select:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(27,61,111,.1);}
-/* Firebase setup steps */
+/* Firebase steps */
 .setup-step{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid #eee;}
 .step-num{background:var(--primary);color:#fff;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;flex-shrink:0;margin-top:2px;}
 /* Live indicator */
 .live-dot{width:8px;height:8px;border-radius:50%;background:#28a745;display:inline-block;animation:pulse 1.5s infinite;}
 @keyframes pulse{0%{opacity:1;}50%{opacity:.3;}100%{opacity:1;}}
-/* Slot mini picker in reschedule */
-.slot-mini-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;}
-.slot-mini-btn{border:2px solid #dee2e6;border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;font-size:.82rem;transition:all .2s;background:#fff;}
-.slot-mini-btn:hover{border-color:var(--primary);background:#eef3fd;}
-.slot-mini-btn.selected{background:var(--primary);border-color:var(--primary);color:#fff;}
 /* Toast */
 .toast-msg{position:fixed;bottom:20px;right:20px;padding:12px 20px;border-radius:10px;color:#fff;z-index:9999;font-size:.88rem;box-shadow:0 4px 16px rgba(0,0,0,.2);}
-@media(max-width:768px){.sidebar{display:none;}.stat-grid{grid-template-columns:repeat(2,1fr);}}
+/* Offer letter modal */
+#offerLetterContent{font-family:Georgia,serif;font-size:14px;line-height:1.8;padding:20px;}
+@media(max-width:768px){.sidebar{display:none;}.stat-grid{grid-template-columns:repeat(3,1fr);}}
+@media print{body *{visibility:hidden;}.print-area,.print-area *{visibility:visible;}.print-area{position:absolute;left:0;top:0;width:100%;}}
 </style>
 </head>
 <body>
@@ -137,13 +150,9 @@ tr:hover td{background:#fafcff;}
       <h5 class="fw-bold" style="color:var(--primary);">Admin Login</h5>
       <p class="text-muted" style="font-size:.85rem;">Enter your password to access the panel</p>
     </div>
-
-    <!-- Firebase Not Configured Warning -->
     <div id="fbWarn" class="alert alert-warning py-2 mb-3" style="font-size:.8rem;display:none;">
-      <i class="bi bi-exclamation-triangle me-1"></i>
-      Firebase not configured yet. Login to complete setup in Settings.
+      <i class="bi bi-exclamation-triangle me-1"></i>Firebase not configured yet. Login to complete setup in Settings.
     </div>
-
     <div class="mb-3">
       <label class="form-label">Password</label>
       <input type="password" class="form-control" id="loginPwd" placeholder="Enter admin password" onkeydown="if(event.key==='Enter')doLogin()">
@@ -173,7 +182,7 @@ tr:hover td{background:#fafcff;}
           <h5 class="fw-bold mb-0" style="color:var(--primary);">Dashboard</h5>
           <span id="liveIndicator" style="display:none;font-size:.75rem;color:#28a745;"><span class="live-dot me-1"></span>Live</span>
         </div>
-        <p class="text-muted mb-4" style="font-size:.85rem;">Real-time overview — updates instantly when candidates submit</p>
+        <p class="text-muted mb-4" style="font-size:.85rem;">Real-time overview of all applications</p>
         <div class="stat-grid" id="statGrid"><div class="text-muted py-3">Loading…</div></div>
         <div class="page-card">
           <div class="page-title">Recent Applications</div>
@@ -186,7 +195,7 @@ tr:hover td{background:#fafcff;}
       <div id="tab-slots" style="display:none;">
         <div class="page-card">
           <div class="page-title">Add Interview Slot</div>
-          <div class="page-sub">Slots you add here become visible to all candidates on the portal immediately</div>
+          <div class="page-sub">Slots added here are sent to shortlisted candidates via the booking link email</div>
           <div class="row g-3">
             <div class="col-md-3">
               <label class="form-label">Date *</label>
@@ -231,29 +240,48 @@ tr:hover td{background:#fafcff;}
           <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
             <div>
               <div class="page-title">All Candidates</div>
-              <div class="page-sub mb-0">Click a row to view full details and take action</div>
+              <div class="page-sub mb-0">Click a row to view full details. Use checkboxes for bulk actions.</div>
             </div>
-            <button class="btn btn-sm btn-outline-success" onclick="exportCSV()"><i class="bi bi-file-earmark-excel me-1"></i>Export to CSV</button>
+            <button class="btn btn-sm btn-outline-success" onclick="exportCSV()"><i class="bi bi-file-earmark-excel me-1"></i>Export CSV</button>
           </div>
+          <!-- Filters -->
           <div class="row g-2 mb-3">
             <div class="col-md-3">
               <select class="form-select form-select-sm" id="filtStatus" onchange="renderCandidates()">
                 <option value="">All Statuses</option>
-                <option value="pending">Pending</option><option value="shortlisted">Shortlisted</option>
-                <option value="accepted">Accepted</option><option value="rejected">Rejected</option>
+                <option value="applied">Applied</option>
+                <option value="shortlisted">Shortlisted</option>
+                <option value="slot_booked">Slot Booked</option>
+                <option value="waitlisted">Waitlisted</option>
                 <option value="rescheduled">Rescheduled</option>
+                <option value="accepted">Accepted</option>
+                <option value="rejected">Rejected</option>
               </select>
             </div>
             <div class="col-md-3">
               <select class="form-select form-select-sm" id="filtCat" onchange="renderCandidates()">
                 <option value="">All Categories</option>
-                <option value="article">Article</option><option value="semi">Semi Qualified</option>
+                <option value="article">Article Trainee</option>
+                <option value="semi">Semi Qualified</option>
                 <option value="qualified">Qualified CA</option>
               </select>
             </div>
             <div class="col-md-4">
-              <input type="text" class="form-control form-select-sm" id="filtSearch" placeholder="Search name, email, city…" oninput="renderCandidates()">
+              <input type="text" class="form-control form-select-sm" id="filtSearch" placeholder="Search name, email, city, ICAI reg…" oninput="renderCandidates()">
             </div>
+            <div class="col-md-2">
+              <select class="form-select form-select-sm" id="filtInterviewer" onchange="renderCandidates()">
+                <option value="">All Interviewers</option>
+              </select>
+            </div>
+          </div>
+          <!-- Bulk action toolbar (hidden until checkboxes selected) -->
+          <div class="bulk-toolbar" id="bulkToolbar" style="display:none;">
+            <span id="bulkCount" class="fw-semibold" style="color:var(--primary);">0 selected</span>
+            <button class="btn btn-primary-sm" onclick="bulkShortlist()"><i class="bi bi-trophy me-1"></i>Shortlist Selected</button>
+            <button class="btn btn-warn-sm" onclick="bulkWaitlist()"><i class="bi bi-clock me-1"></i>Waitlist Selected</button>
+            <button class="btn btn-danger-sm" onclick="bulkReject()"><i class="bi bi-x-circle me-1"></i>Reject Selected</button>
+            <button class="btn btn-sec-sm" onclick="clearSelection()"><i class="bi bi-x me-1"></i>Clear</button>
           </div>
           <div class="tbl-wrap" id="candTable"><div class="text-muted py-3">Loading candidates…</div></div>
         </div>
@@ -265,19 +293,13 @@ tr:hover td{background:#fafcff;}
         <!-- Firebase Setup Guide -->
         <div class="page-card" id="fbSetupCard">
           <div class="page-title text-warning"><i class="bi bi-fire me-2"></i>Firebase Setup <span id="fbStatus" class="badge bg-danger ms-2" style="font-size:.72rem;">Not Connected</span></div>
-          <div class="page-sub">Complete this once to enable cross-device data sync for candidates and admin</div>
-
+          <div class="page-sub">Complete once to enable cross-device data sync</div>
           <div style="font-size:.85rem;line-height:1.8;">
             <div class="setup-step"><div class="step-num">1</div><div>Go to <a href="https://console.firebase.google.com" target="_blank"><strong>console.firebase.google.com</strong></a> and sign in with your Google account</div></div>
-            <div class="setup-step"><div class="step-num">2</div><div>Click <strong>"Create a project"</strong> → Enter project name (e.g., <em>gk-recruitment</em>) → Continue → Disable Analytics → Create</div></div>
-            <div class="setup-step"><div class="step-num">3</div><div>In the left menu, click <strong>"Build → Realtime Database"</strong> → Click <strong>"Create Database"</strong> → Choose <strong>Asia-Pacific (Singapore)</strong> → Select <strong>"Start in test mode"</strong> → Enable</div></div>
-            <div class="setup-step"><div class="step-num">4</div><div>Click the <strong>⚙️ gear icon</strong> next to "Project Overview" → <strong>Project Settings</strong> → Scroll to <strong>"Your apps"</strong> → Click the <strong>&lt;/&gt; (Web)</strong> icon → Register app (any name) → Copy the <code>firebaseConfig</code> object</div></div>
-            <div class="setup-step" style="border:none;"><div class="step-num">5</div><div>Open both <strong>index.html</strong> and <strong>admin.html</strong> in a text editor → Find <code>FIREBASE_CONFIG</code> at the top → Replace the placeholder values with your copied config → Save both files → Re-upload to GitHub Pages</div></div>
-          </div>
-
-          <div class="alert alert-info mt-3 py-2" style="font-size:.8rem;">
-            <i class="bi bi-shield-check me-1"></i>
-            Firebase config is safe to be public — it's designed this way. Security is managed by Firebase Database Rules. The test mode rules expire after 30 days; contact us to set up proper rules before then.
+            <div class="setup-step"><div class="step-num">2</div><div>Click <strong>"Create a project"</strong> → Enter project name → Continue → Disable Analytics → Create</div></div>
+            <div class="setup-step"><div class="step-num">3</div><div>Click <strong>"Build → Realtime Database"</strong> → <strong>"Create Database"</strong> → Choose <strong>Asia-Pacific (Singapore)</strong> → <strong>"Start in test mode"</strong> → Enable</div></div>
+            <div class="setup-step"><div class="step-num">4</div><div>Click ⚙️ gear → <strong>Project Settings</strong> → <strong>"Your apps"</strong> → Click <strong>&lt;/&gt;</strong> icon → Register → Copy <code>firebaseConfig</code></div></div>
+            <div class="setup-step" style="border:none;"><div class="step-num">5</div><div>Open both <strong>index.html</strong> and <strong>admin.html</strong> → Find <code>FIREBASE_CONFIG</code> → Replace with your config → Save and re-upload</div></div>
           </div>
         </div>
 
@@ -292,6 +314,19 @@ tr:hover td{background:#fafcff;}
             <div class="col-md-6">
               <label class="form-label">Admin / Contact Email</label>
               <input type="email" class="form-control" id="cfgEmail" placeholder="admin@firm.com">
+            </div>
+            <div class="col-md-8">
+              <label class="form-label">Candidate Portal URL <span class="text-muted fw-normal">(used for slot booking links in emails)</span></label>
+              <input type="url" class="form-control" id="cfgPortalUrl" placeholder="https://girishmgk.github.io/recruitment-portal/index.html">
+              <div class="text-muted mt-1" style="font-size:.75rem;">The shortlist email will include: <code>[portal URL]?book=[App ID]</code></div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Default Stipend / Remuneration (₹)</label>
+              <input type="number" class="form-control" id="cfgStipend" placeholder="e.g. 8000">
+            </div>
+            <div class="col-md-12">
+              <label class="form-label">Interview Panel Members <span class="text-muted fw-normal">(one per line — used for assignment in candidate profiles)</span></label>
+              <textarea class="form-control" id="cfgPanelMembers" rows="3" placeholder="CA Partner Name&#10;CA Senior Manager&#10;HR Manager"></textarea>
             </div>
           </div>
         </div>
@@ -317,8 +352,8 @@ tr:hover td{background:#fafcff;}
 
         <!-- EmailJS -->
         <div class="page-card">
-          <div class="page-title">EmailJS — Candidate Confirmation Emails <span class="badge bg-info ms-2" style="font-size:.72rem;">Optional</span></div>
-          <div class="page-sub">Free service that sends automatic emails to candidates when they book a slot. Sign up at <a href="https://www.emailjs.com" target="_blank">emailjs.com</a> (200 emails/month free)</div>
+          <div class="page-title">EmailJS — Automated Emails <span class="badge bg-info ms-2" style="font-size:.72rem;">Optional</span></div>
+          <div class="page-sub">Sign up at <a href="https://www.emailjs.com" target="_blank">emailjs.com</a> (200 emails/month free). Create one template per email type.</div>
           <div class="row g-3">
             <div class="col-md-4">
               <label class="form-label">Service ID</label>
@@ -331,42 +366,63 @@ tr:hover td{background:#fafcff;}
           </div>
           <div class="row g-3 mt-1">
             <div class="col-md-4">
-              <label class="form-label">Booking Confirmation Template ID</label>
+              <label class="form-label">Application Received Template</label>
               <input type="text" class="form-control" id="cfgEjsTpl" placeholder="template_xxxxxxxx">
-              <div class="text-muted mt-1" style="font-size:.75rem;">Sent when candidate books a slot</div>
+              <div class="text-muted mt-1" style="font-size:.75rem;">Sent on initial form submission</div>
             </div>
             <div class="col-md-4">
-              <label class="form-label">Acceptance Email Template ID</label>
+              <label class="form-label">Shortlist Template <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="cfgEjsShortTpl" placeholder="template_xxxxxxxx">
+              <div class="text-muted mt-1" style="font-size:.75rem;">Sent when shortlisted — must include <code>{{booking_link}}</code></div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Slot Confirmed Template</label>
+              <input type="text" class="form-control" id="cfgEjsSlotTpl" placeholder="template_xxxxxxxx">
+              <div class="text-muted mt-1" style="font-size:.75rem;">Sent after candidate books a slot</div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Waitlist Template</label>
+              <input type="text" class="form-control" id="cfgEjsWaitTpl" placeholder="template_xxxxxxxx">
+              <div class="text-muted mt-1" style="font-size:.75rem;">Sent when placed on waitlist</div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Acceptance Email Template</label>
               <input type="text" class="form-control" id="cfgEjsAccTpl" placeholder="template_xxxxxxxx">
-              <div class="text-muted mt-1" style="font-size:.75rem;">Sent when you click Accept in admin</div>
+              <div class="text-muted mt-1" style="font-size:.75rem;">Sent when you click Accept</div>
             </div>
             <div class="col-md-4">
-              <label class="form-label">Rejection Email Template ID</label>
+              <label class="form-label">Rejection Email Template</label>
               <input type="text" class="form-control" id="cfgEjsRejTpl" placeholder="template_xxxxxxxx">
-              <div class="text-muted mt-1" style="font-size:.75rem;">Sent when you click Reject in admin</div>
+              <div class="text-muted mt-1" style="font-size:.75rem;">Sent when you click Reject</div>
             </div>
-          </div>
-          <div class="row g-3 mt-1">
             <div class="col-md-4">
-              <label class="form-label">Reschedule Email Template ID</label>
+              <label class="form-label">Reschedule Email Template</label>
               <input type="text" class="form-control" id="cfgEjsReschTpl" placeholder="template_xxxxxxxx">
-              <div class="text-muted mt-1" style="font-size:.75rem;">Sent when you reschedule a candidate's slot</div>
+              <div class="text-muted mt-1" style="font-size:.75rem;">Sent on slot reschedule</div>
             </div>
           </div>
-          <div class="alert alert-secondary mt-3 py-2" style="font-size:.8rem;">
-            <strong>Template variables available in all templates:</strong><br>
-            <code>&#123;&#123;to_name&#125;&#125;</code> &nbsp;<code>&#123;&#123;to_email&#125;&#125;</code> &nbsp;<code>&#123;&#123;app_id&#125;&#125;</code> &nbsp;<code>&#123;&#123;slot_date&#125;&#125;</code> &nbsp;<code>&#123;&#123;slot_time&#125;&#125;</code> &nbsp;<code>&#123;&#123;firm_name&#125;&#125;</code> &nbsp;<code>&#123;&#123;status&#125;&#125;</code><br><br>
-            <strong>Suggested rejection message:</strong> "Dear &#123;&#123;to_name&#125;&#125;, we regret to inform you that your resume does not meet our firm's current requirements. Thank you for your interest in &#123;&#123;firm_name&#125;&#125;. We wish you all the best."<br><br>
-            <strong>Suggested acceptance message:</strong> "Dear &#123;&#123;to_name&#125;&#125;, we are pleased to confirm your interview is scheduled on &#123;&#123;slot_date&#125;&#125; at &#123;&#123;slot_time&#125;&#125;. Please be available 5 minutes prior. — &#123;&#123;firm_name&#125;&#125;"
+          <div class="alert alert-secondary mt-3 py-2" style="font-size:.78rem;">
+            <strong>Template variables:</strong>
+            <code>{{to_name}}</code> <code>{{to_email}}</code> <code>{{app_id}}</code>
+            <code>{{slot_date}}</code> <code>{{slot_time}}</code> <code>{{firm_name}}</code>
+            <code>{{status}}</code> <code>{{booking_link}}</code> (shortlist only)<br><br>
+            <strong>Shortlist template example:</strong> "Dear {{to_name}}, you've been shortlisted! Please book your interview slot here: {{booking_link}}"
           </div>
         </div>
 
-        <!-- OneDrive / Export -->
+        <!-- Offer Letter Template -->
         <div class="page-card">
-          <div class="page-title">Export Data to OneDrive</div>
-          <div class="page-sub">Download all candidate data as a CSV file, then save it to your OneDrive folder — it auto-syncs from there</div>
+          <div class="page-title">Offer Letter Template</div>
+          <div class="page-sub">Customise the offer letter that gets auto-generated for accepted candidates. Placeholders: <code>{{candidate_name}}</code> <code>{{joining_date}}</code> <code>{{stipend}}</code> <code>{{firm_name}}</code> <code>{{category_desc}}</code> <code>{{today_date}}</code> <code>{{icai_reg}}</code></div>
+          <textarea class="form-control" id="cfgOfferTemplate" rows="14" style="font-family:monospace;font-size:.82rem;"></textarea>
+        </div>
+
+        <!-- Export -->
+        <div class="page-card">
+          <div class="page-title">Export Data</div>
+          <div class="page-sub">Download all candidate data as CSV (Excel-compatible)</div>
           <div class="d-flex gap-2 flex-wrap">
-            <button class="btn btn-primary-sm" onclick="exportCSV()"><i class="bi bi-file-earmark-excel me-1"></i>Download CSV (Excel-compatible)</button>
+            <button class="btn btn-primary-sm" onclick="exportCSV()"><i class="bi bi-file-earmark-excel me-1"></i>Download CSV</button>
             <a href="https://onedrive.live.com" target="_blank" class="btn btn-sec-sm"><i class="bi bi-cloud-upload me-1"></i>Open OneDrive</a>
           </div>
         </div>
@@ -412,7 +468,7 @@ tr:hover td{background:#fafcff;}
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        <p class="text-muted" style="font-size:.85rem;">Select a new slot. The candidate's current slot will be released automatically.</p>
+        <p class="text-muted" style="font-size:.85rem;">Select a new slot. The candidate's current slot will be released.</p>
         <div id="reschedBody"></div>
       </div>
       <div class="modal-footer">
@@ -423,23 +479,103 @@ tr:hover td{background:#fafcff;}
   </div>
 </div>
 
+<!-- ══ OFFER LETTER MODAL ══ -->
+<div class="modal fade" id="offerModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content" style="border-radius:14px;">
+      <div class="modal-header" style="background:var(--primary);color:#fff;border-radius:14px 14px 0 0;">
+        <h5 class="modal-title fw-bold"><i class="bi bi-file-earmark-text me-2"></i>Offer Letter Preview</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="offerLetterContent" class="print-area" style="border:1px solid #dee2e6;border-radius:8px;padding:30px;min-height:500px;white-space:pre-wrap;font-family:Georgia,serif;line-height:1.9;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-sec-sm" data-bs-dismiss="modal">Close</button>
+        <button class="btn btn-primary-sm" onclick="window.print()"><i class="bi bi-printer me-1"></i>Print / Save as PDF</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 // ═══════════════════════════════════════════════════════
 //  STATE
 // ═══════════════════════════════════════════════════════
-let allCandidates = {};   // live from Firebase
-let allSlots      = {};   // live from Firebase
-let activeCandId  = null;
-let reschedCandId = null;
+let allCandidates  = {};
+let allSlots       = {};
+let activeCandId   = null;
+let reschedCandId  = null;
 let reschedNewSlotId = null;
+let selectedIds    = new Set();
+let _cfgCache      = {};
 
-const CAT_LABEL = {article:'Article',semi:'Semi Qualified',qualified:'Qualified CA'};
-const DOM_LABEL = {statutory:'Statutory Audit',internal:'Internal Audit',direct:'Direct Tax',indirect:'Indirect Tax',others:'Others'};
+const CAT_LABEL = {article:'Article Trainee',semi:'Semi Qualified',qualified:'Qualified CA'};
+const DOM_LABEL = {
+  statutory:'Statutory Audit', internal:'Internal Audit/IFC',
+  direct:'Direct Tax', gst:'Indirect Tax/GST',
+  ind_as:'Ind AS', fdd:'Due Diligence/FDD',
+  forensic:'Forensic', ipo:'IPO/Capital Mkts',
+  risk:'Risk & Compliance', others:'Others'
+};
+const STATUS_LABEL = {
+  applied:'Applied', pending:'Pending',
+  shortlisted:'Shortlisted', slot_booked:'Slot Booked',
+  waitlisted:'Waitlisted', accepted:'Accepted',
+  rescheduled:'Rescheduled', rejected:'Rejected'
+};
 
-// Password stored in localStorage (device-only, not in Firebase)
-function getPwd()    { try { return localStorage.getItem('adminPwd') || 'admin123'; } catch(e) { return 'admin123'; } }
-function setPwd(p)   { try { localStorage.setItem('adminPwd', p); } catch(e) {} }
+const DOC_LIST = [
+  {id:'marksheet_10', label:'10th Marksheet'},
+  {id:'marksheet_12', label:'12th Marksheet'},
+  {id:'graduation',   label:'Graduation Certificate'},
+  {id:'ca_inter',     label:'CA Inter Marksheet'},
+  {id:'ca_final',     label:'CA Final Marksheet (if applicable)'},
+  {id:'icai_reg',     label:'ICAI Registration Certificate'},
+  {id:'photo_id',     label:'Photo ID (Aadhar / Passport)'},
+  {id:'photo',        label:'Passport Size Photograph (2 nos.)'},
+  {id:'bank_details', label:'Cancelled Cheque / Bank Details'},
+  {id:'relieving',    label:'Previous Firm Relieving Letter (if transfer)'},
+];
+
+const DEFAULT_OFFER_TEMPLATE = `Date: {{today_date}}
+
+To,
+{{candidate_name}}
+
+Dear {{candidate_name}},
+
+SUBJECT: APPOINTMENT AS {{category_desc}}
+
+We are pleased to inform you that you have been selected for the position of {{category_desc}} at {{firm_name}}.
+
+Your appointment details are as follows:
+  • Date of Joining  : {{joining_date}}
+  • Stipend / CTC    : ₹{{stipend}} per month
+  • ICAI Reg. No.    : {{icai_reg}}
+
+Please report to our office on the above mentioned joining date with original copies of the following:
+  1. All academic mark sheets (10th, 12th, Graduation)
+  2. CA Examination mark sheets
+  3. ICAI Registration Certificate
+  4. Photo identity proof (Aadhar Card / Passport)
+  5. 2 recent passport size photographs
+  6. Cancelled cheque (for stipend processing)
+
+This offer is subject to verification of all original documents.
+
+We look forward to welcoming you to our team.
+
+Yours faithfully,
+For {{firm_name}}
+
+
+(Authorised Signatory)
+`;
+
+function getPwd()  { try { return localStorage.getItem('adminPwd') || 'admin123'; } catch(e) { return 'admin123'; } }
+function setPwd(p) { try { localStorage.setItem('adminPwd', p); } catch(e) {} }
 
 // ═══════════════════════════════════════════════════════
 //  LOGIN
@@ -454,10 +590,8 @@ function doLogin() {
   if (pwd === getPwd()) {
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('mainApp').style.display = 'block';
-    try { initApp(); } catch(e) { console.error('initApp error:', e); }
-  } else {
-    document.getElementById('loginErr').style.display = 'block';
-  }
+    try { initApp(); } catch(e) { console.error('initApp error:',e); showToast('Panel loaded. Some features may need Firebase setup.','warn'); }
+  } else { document.getElementById('loginErr').style.display = 'block'; }
 }
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('loginPwd').addEventListener('keydown', e => { if (e.key==='Enter') doLogin(); });
@@ -469,40 +603,38 @@ function logout() {
 }
 
 // ═══════════════════════════════════════════════════════
-//  INIT — attach Firebase real-time listeners
+//  INIT
 // ═══════════════════════════════════════════════════════
 function initApp() {
   if (!FB_READY) {
     showTab('settings', document.querySelector('.sidebar-item:last-child'));
-    showToast('Firebase not configured yet. Please complete setup in Settings.', 'warn');
-    loadSettings();
-    return;
+    showToast('Firebase not configured. Please complete setup in Settings.', 'warn');
+    loadSettings(); return;
   }
-
-  // Update Firebase status indicator
   document.getElementById('fbStatus').textContent = 'Connected';
   document.getElementById('fbStatus').className = 'badge bg-success ms-2';
   document.getElementById('liveIndicator').style.display = 'inline';
 
-  // Load firm config
   firebase.database().ref('config').on('value', snap => {
-    const c = snap.val() || {};
-    document.getElementById('hdrFirm').textContent = c.firmName || 'Recruitment Admin';
+    _cfgCache = snap.val() || {};
+    document.getElementById('hdrFirm').textContent = _cfgCache.firmName || 'Recruitment Admin';
+    // Populate interviewer filter
+    const sel = document.getElementById('filtInterviewer');
+    sel.innerHTML = '<option value="">All Interviewers</option>';
+    (_cfgCache.panelMembers||'').split('\n').map(s=>s.trim()).filter(Boolean).forEach(m => {
+      const o = document.createElement('option'); o.value = m; o.textContent = m;
+      sel.appendChild(o);
+    });
   });
 
-  // Live candidates listener
   firebase.database().ref('candidates').on('value', snap => {
     allCandidates = snap.val() || {};
-    loadDashboard();
-    renderCandidates();
+    loadDashboard(); renderCandidates();
   });
-
-  // Live slots listener
   firebase.database().ref('slots').on('value', snap => {
     allSlots = snap.val() || {};
     renderSlots();
   });
-
   loadSettings();
 }
 
@@ -523,25 +655,27 @@ function showTab(name, el) {
 function loadDashboard() {
   const cands = Object.values(allCandidates);
   const count = s => cands.filter(c => c.status===s).length;
+  const countArr = s => Array.isArray(s) ? cands.filter(c=>s.includes(c.status)).length : count(s);
   document.getElementById('statGrid').innerHTML = `
     <div class="stat-card"><div class="stat-num" style="color:var(--primary);">${cands.length}</div><div class="stat-lbl">Total Applications</div></div>
-    <div class="stat-card"><div class="stat-num" style="color:#ffc107;">${count('pending')}</div><div class="stat-lbl">Pending Review</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:#6c757d;">${countArr(['applied','pending'])}</div><div class="stat-lbl">Pending Review</div></div>
     <div class="stat-card"><div class="stat-num" style="color:#0d6efd;">${count('shortlisted')}</div><div class="stat-lbl">Shortlisted</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:#20c997;">${countArr(['slot_booked','rescheduled'])}</div><div class="stat-lbl">Slot Booked</div></div>
     <div class="stat-card"><div class="stat-num" style="color:var(--success);">${count('accepted')}</div><div class="stat-lbl">Accepted</div></div>
     <div class="stat-card"><div class="stat-num" style="color:#dc3545;">${count('rejected')}</div><div class="stat-lbl">Rejected</div></div>`;
 
   const recent = cands.sort((a,b) => b.submittedAt > a.submittedAt ? 1 : -1).slice(0,10);
   if (!recent.length) { document.getElementById('recentTable').innerHTML = '<p class="text-muted py-2">No applications yet.</p>'; return; }
   document.getElementById('recentTable').innerHTML = `<table><thead><tr>
-    <th>ID</th><th>Name</th><th>Category</th><th>Location</th><th>Slot</th><th>Status</th>
+    <th>ID</th><th>Name</th><th>Category</th><th>Location</th><th>Status</th><th>Submitted</th>
   </tr></thead><tbody>
   ${recent.map(c => `<tr style="cursor:pointer;" onclick="openDetail('${c.id}')">
     <td><code style="font-size:.76rem;">${c.id}</code></td>
     <td><strong>${c.name}</strong><br><span class="text-muted" style="font-size:.76rem;">${c.email}</span></td>
     <td>${CAT_LABEL[c.category]||c.category}</td>
     <td>${c.city}, ${c.state}</td>
-    <td style="font-size:.8rem;">${c.slotDate ? fmt12(c.slotTime)+'<br>'+shortDate(c.slotDate) : '—'}</td>
-    <td><span class="badge-${c.status}">${c.status}</span></td>
+    <td><span class="badge-${c.status||'applied'}">${STATUS_LABEL[c.status]||c.status}</span></td>
+    <td style="font-size:.78rem;">${new Date(c.submittedAt).toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</td>
   </tr>`).join('')}
   </tbody></table>`;
 }
@@ -550,39 +684,34 @@ function loadDashboard() {
 //  SLOTS
 // ═══════════════════════════════════════════════════════
 async function addSlot() {
-  if (!FB_READY) { showToast('Firebase not configured.', 'warn'); return; }
+  if (!FB_READY) { showToast('Firebase not configured.','warn'); return; }
   const d = document.getElementById('slotDate').value;
   const t = document.getElementById('slotTime').value;
   const dur = +document.getElementById('slotDur').value;
   const mx  = +document.getElementById('slotMax').value;
-  if (!d || !t) { showToast('Please select a date and time.', 'warn'); return; }
-
-  // Check duplicate
-  const dup = Object.values(allSlots).find(s => s.date===d && s.time===t);
-  if (dup) { showToast('A slot at this date and time already exists.', 'warn'); return; }
-
+  if (!d || !t) { showToast('Please select a date and time.','warn'); return; }
+  if (Object.values(allSlots).find(s => s.date===d && s.time===t)) { showToast('A slot at this date & time already exists.','warn'); return; }
   const id = 'SL'+Date.now();
   await firebase.database().ref('slots/'+id).set({id, date:d, time:t, duration:dur, maxCandidates:mx, bookedBy:[]});
   document.getElementById('slotDate').value = '';
   document.getElementById('slotTime').value = '';
-  showToast('Slot added successfully!', 'success');
+  showToast('Slot added!', 'success');
 }
 
 async function bulkSlots() {
-  if (!FB_READY) { showToast('Firebase not configured.', 'warn'); return; }
+  if (!FB_READY) { showToast('Firebase not configured.','warn'); return; }
   const dur = +document.getElementById('slotDur').value || 30;
   const times = ['09:30','10:00','10:30','11:00','11:30','14:00','14:30','15:00','15:30'];
-  const updates = {};
-  let added = 0;
+  const updates = {}; let added = 0;
   for (let d=1; d<=14 && added<5; d++) {
     const date = new Date(); date.setDate(date.getDate()+d);
-    if (date.getDay()===0 || date.getDay()===6) continue;
-    const dateStr = date.toISOString().split('T')[0];
-    const existing = Object.values(allSlots).filter(s => s.date===dateStr).map(s => s.time);
+    if (date.getDay()===0||date.getDay()===6) continue;
+    const ds = date.toISOString().split('T')[0];
+    const exist = Object.values(allSlots).filter(s => s.date===ds).map(s => s.time);
     times.forEach(t => {
-      if (!existing.includes(t)) {
+      if (!exist.includes(t)) {
         const id = 'SL'+Date.now()+'_'+t.replace(':','');
-        updates['slots/'+id] = {id, date:dateStr, time:t, duration:dur, maxCandidates:1, bookedBy:[]};
+        updates['slots/'+id] = {id, date:ds, time:t, duration:dur, maxCandidates:1, bookedBy:[]};
       }
     });
     added++;
@@ -590,43 +719,35 @@ async function bulkSlots() {
   if (Object.keys(updates).length) {
     await firebase.database().ref().update(updates);
     showToast(`Slots added for next ${added} working days!`, 'success');
-  } else {
-    showToast('All slots for next 5 working days already exist.', 'warn');
-  }
+  } else { showToast('All slots already exist.','warn'); }
 }
 
 async function clearOldSlots() {
-  if (!confirm('Remove all past slots that have no bookings?')) return;
+  if (!confirm('Remove all past slots with no bookings?')) return;
   const today = new Date().toISOString().split('T')[0];
   const updates = {};
   Object.entries(allSlots).forEach(([id, s]) => {
     if (s.date < today && (!s.bookedBy || !s.bookedBy.length)) updates['slots/'+id] = null;
   });
   if (Object.keys(updates).length) {
-    await firebase.database().ref().update(updates);
-    showToast('Past empty slots removed.', 'success');
-  } else {
-    showToast('No past empty slots to remove.', 'warn');
-  }
+    await firebase.database().ref().update(updates); showToast('Past empty slots removed.','success');
+  } else { showToast('No past empty slots.','warn'); }
 }
 
 async function deleteSlot(id) {
   const s = allSlots[id];
-  if (s && s.bookedBy && s.bookedBy.length) {
-    if (!confirm('This slot has a booking. Delete anyway?')) return;
-  }
+  if (s && s.bookedBy && s.bookedBy.length) { if (!confirm('This slot has a booking. Delete anyway?')) return; }
   await firebase.database().ref('slots/'+id).remove();
-  showToast('Slot deleted.', 'success');
+  showToast('Slot deleted.','success');
 }
 
 function renderSlots() {
   const el = document.getElementById('slotsList');
   if (!el) return;
   const slots = Object.values(allSlots).sort((a,b) => a.date+a.time < b.date+b.time ? -1 : 1);
-  if (!slots.length) { el.innerHTML = '<p class="text-muted py-2">No slots added yet. Use the form above to add slots.</p>'; return; }
-
+  if (!slots.length) { el.innerHTML = '<p class="text-muted py-2">No slots added yet.</p>'; return; }
   const grp = {};
-  slots.forEach(s => { if (!grp[s.date]) grp[s.date] = []; grp[s.date].push(s); });
+  slots.forEach(s => { if (!grp[s.date]) grp[s.date]=[]; grp[s.date].push(s); });
   const today = new Date().toISOString().split('T')[0];
   let html = '';
   Object.keys(grp).sort().forEach(date => {
@@ -638,10 +759,9 @@ function renderSlots() {
     grp[date].forEach(s => {
       const booked = (s.bookedBy||[]).length;
       const candName = booked ? Object.values(allCandidates).find(c => c.id===(s.bookedBy||[])[0])?.name : null;
-      html += `<div class="slot-item ${past?'opacity-60':''}">
+      html += `<div class="slot-item ${past?'opacity-75':''}">
         <div style="font-size:.87rem;">
-          <strong>${fmt12(s.time)}</strong> &nbsp;·&nbsp; ${s.duration||30} min
-          &nbsp;·&nbsp;
+          <strong>${fmt12(s.time)}</strong> · ${s.duration||30} min ·
           ${booked
             ? `<span class="text-success fw-semibold"><i class="bi bi-person-check me-1"></i>Booked${candName?' — '+candName:''}</span>`
             : '<span class="text-muted"><i class="bi bi-circle me-1"></i>Available</span>'}
@@ -657,41 +777,150 @@ function renderSlots() {
 //  CANDIDATES TABLE
 // ═══════════════════════════════════════════════════════
 function renderCandidates() {
-  const filtStatus = document.getElementById('filtStatus')?.value || '';
-  const filtCat    = document.getElementById('filtCat')?.value    || '';
-  const search     = document.getElementById('filtSearch')?.value?.toLowerCase() || '';
+  const filtStatus     = document.getElementById('filtStatus')?.value     || '';
+  const filtCat        = document.getElementById('filtCat')?.value        || '';
+  const search         = document.getElementById('filtSearch')?.value?.toLowerCase() || '';
+  const filtInterviewer = document.getElementById('filtInterviewer')?.value || '';
 
   let cands = Object.values(allCandidates);
   if (filtStatus) cands = cands.filter(c => c.status === filtStatus);
   if (filtCat)    cands = cands.filter(c => c.category === filtCat);
-  if (search)     cands = cands.filter(c => (c.name+c.email+c.city+c.state+'').toLowerCase().includes(search));
+  if (filtInterviewer) cands = cands.filter(c => c.interviewer === filtInterviewer);
+  if (search)     cands = cands.filter(c => (c.name+c.email+c.city+c.state+(c.icaiRegNo||'')+'').toLowerCase().includes(search));
   cands = cands.sort((a,b) => b.submittedAt > a.submittedAt ? 1 : -1);
 
   const el = document.getElementById('candTable');
   if (!el) return;
   if (!cands.length) { el.innerHTML = '<p class="text-muted py-3">No candidates match your filters.</p>'; return; }
 
+  // Update bulk toolbar
+  const sel = cands.filter(c => selectedIds.has(c.id));
+  document.getElementById('bulkToolbar').style.display = selectedIds.size > 0 ? 'flex' : 'none';
+  document.getElementById('bulkCount').textContent = selectedIds.size + ' selected';
+
   el.innerHTML = `<table><thead><tr>
-    <th>Name / Email</th><th>Category</th><th>G1</th><th>G2</th>
-    <th>Location</th><th>Slot</th><th>Status</th><th></th>
+    <th><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this,${JSON.stringify(cands.map(c=>c.id)).replace(/"/g,'&quot;')})"></th>
+    <th>Name / Email</th><th>Category</th><th>Exam Score</th>
+    <th>ICAI Reg</th><th>Joining</th><th>Interviewer</th><th>Slot</th><th>Status</th><th></th>
   </tr></thead><tbody>
   ${cands.map(c => {
     const g1pct = Math.round((+c.g1m/400)*100);
     const g2pct = c.g2na ? null : Math.round((+c.g2m/400)*100);
+    const scoreAvg = c.score ? Math.round((+c.score.technical + +c.score.communication + +c.score.attitude + +(c.score.analytical||0)) / (c.score.analytical ? 4 : 3)) : null;
+    const scoreBadge = scoreAvg ? `<span class="badge" style="background:${scoreAvg>=4?'#198754':scoreAvg>=3?'#ffc107':'#dc3545'};font-size:.7rem;">${'★'.repeat(scoreAvg)}</span>` : '';
     return `<tr>
-      <td style="cursor:pointer;" onclick="openDetail('${c.id}')">
-        <strong>${c.name}</strong><br><span class="text-muted" style="font-size:.76rem;">${c.email}</span>
+      <td onclick="event.stopPropagation()">
+        <input type="checkbox" class="cand-chk" value="${c.id}" ${selectedIds.has(c.id)?'checked':''} onchange="toggleSelect('${c.id}',this)">
       </td>
-      <td>${CAT_LABEL[c.category]||c.category}</td>
-      <td>${c.g1m}/400<br><small class="text-muted">${c.g1a} att · ${g1pct}%</small></td>
-      <td>${c.g2na ? '<span class="text-muted" style="font-size:.8rem;">N/A</span>' : `${c.g2m}/400<br><small class="text-muted">${c.g2a} att · ${g2pct}%</small>`}</td>
-      <td>${c.city}, ${c.state}</td>
+      <td style="cursor:pointer;" onclick="openDetail('${c.id}')">
+        <strong>${c.name}</strong><br>
+        <span class="text-muted" style="font-size:.75rem;">${c.email}</span><br>
+        <span class="text-muted" style="font-size:.75rem;">${c.phone||''}</span>
+      </td>
+      <td>${CAT_LABEL[c.category]||c.category}<br>
+        ${c.articleshipType==='transfer'?'<span class="badge bg-warning text-dark" style="font-size:.68rem;">Transfer</span>':''}
+      </td>
+      <td>G1: ${c.g1m}/400 (${g1pct}%)<br>${c.g2na?'<span class="text-muted" style="font-size:.78rem;">G2: N/A</span>':`G2: ${c.g2m}/400 (${g2pct}%)`}
+        <br>${scoreBadge}
+      </td>
+      <td style="font-size:.8rem;">${c.icaiRegNo||'—'}</td>
+      <td style="font-size:.8rem;">${c.joinMonth ? new Date(c.joinMonth+'-01').toLocaleDateString('en-IN',{month:'short',year:'numeric'}) : '—'}</td>
+      <td style="font-size:.8rem;">${c.interviewer||'—'}</td>
       <td style="font-size:.8rem;">${c.slotDate ? fmt12(c.slotTime)+'<br>'+shortDate(c.slotDate) : '—'}</td>
-      <td><span class="badge-${c.status}">${c.status}</span></td>
+      <td><span class="badge-${c.status||'applied'}">${STATUS_LABEL[c.status]||c.status}</span></td>
       <td><button class="btn btn-primary-sm" onclick="openDetail('${c.id}')"><i class="bi bi-eye"></i></button></td>
     </tr>`;
   }).join('')}
   </tbody></table>`;
+}
+
+function toggleSelect(id, cb) {
+  if (cb.checked) selectedIds.add(id); else selectedIds.delete(id);
+  renderCandidates();
+}
+function toggleSelectAll(masterCb, ids) {
+  if (masterCb.checked) ids.forEach(id => selectedIds.add(id));
+  else ids.forEach(id => selectedIds.delete(id));
+  renderCandidates();
+}
+function clearSelection() { selectedIds.clear(); renderCandidates(); }
+
+// ═══════════════════════════════════════════════════════
+//  BULK ACTIONS
+// ═══════════════════════════════════════════════════════
+async function bulkShortlist() {
+  if (!selectedIds.size) return;
+  if (!confirm(`Shortlist ${selectedIds.size} candidate(s) and send booking link emails?`)) return;
+  let count = 0;
+  for (const id of selectedIds) {
+    await shortlistCandidate(id, true); count++;
+  }
+  selectedIds.clear();
+  renderCandidates();
+  showToast(`${count} candidate(s) shortlisted and emails sent.`, 'success');
+}
+
+async function bulkWaitlist() {
+  if (!selectedIds.size) return;
+  if (!confirm(`Put ${selectedIds.size} candidate(s) on waitlist?`)) return;
+  const updates = {};
+  selectedIds.forEach(id => { updates['candidates/'+id+'/status'] = 'waitlisted'; });
+  await firebase.database().ref().update(updates);
+  // Send waitlist emails
+  for (const id of selectedIds) {
+    await sendStatusEmail(id, 'waitlisted');
+  }
+  selectedIds.clear(); renderCandidates();
+  showToast('Candidates moved to waitlist.', 'success');
+}
+
+async function bulkReject() {
+  if (!selectedIds.size) return;
+  if (!confirm(`Reject ${selectedIds.size} candidate(s) and send rejection emails?`)) return;
+  for (const id of selectedIds) {
+    await setStatus(id, 'rejected', true);
+  }
+  selectedIds.clear(); renderCandidates();
+  showToast('Candidates rejected and emails sent.', 'success');
+}
+
+// ═══════════════════════════════════════════════════════
+//  SHORTLIST CANDIDATE — generates booking link, sends email
+// ═══════════════════════════════════════════════════════
+async function shortlistCandidate(id, silent) {
+  if (!FB_READY) { if (!silent) showToast('Firebase not configured.','warn'); return; }
+  await firebase.database().ref('candidates/'+id+'/status').set('shortlisted');
+
+  const portalUrl = _cfgCache.portalUrl || '';
+  const bookingLink = portalUrl ? `${portalUrl.replace(/\/$/, '')}?book=${id}` : `?book=${id}`;
+
+  // Send shortlist email
+  try {
+    const [cfSnap, candSnap] = await Promise.all([
+      firebase.database().ref('config').once('value'),
+      firebase.database().ref('candidates/'+id).once('value')
+    ]);
+    const cf   = cfSnap.val()   || {};
+    const cand = candSnap.val() || {};
+    if (cf.ejsSvc && cf.ejsShortTpl && cf.ejsKey) {
+      emailjs.init(cf.ejsKey);
+      await emailjs.send(cf.ejsSvc, cf.ejsShortTpl, {
+        to_name:  cand.name    || '',
+        to_email: cand.email   || '',
+        app_id:   cand.id      || id,
+        booking_link: bookingLink,
+        firm_name: cf.firmName || 'Our Firm',
+        category: CAT_LABEL[cand.category] || cand.category || '',
+        status: 'shortlisted'
+      });
+      if (!silent) showToast(`Shortlist email sent to ${cand.email}.`, 'success');
+    } else {
+      if (!silent) showToast(`Shortlisted. Configure EmailJS shortlist template to auto-send email. Booking link: ${bookingLink}`, 'warn');
+    }
+  } catch(e) {
+    console.warn('Shortlist email error:', e);
+    if (!silent) showToast('Shortlisted but email failed: '+e.message, 'warn');
+  }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -706,6 +935,67 @@ function openDetail(id) {
   const g1pct = Math.round((+c.g1m/400)*100);
   const g2pct = c.g2na ? null : Math.round((+c.g2m/400)*100);
   const submitted = new Date(c.submittedAt).toLocaleString('en-IN',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  const joinDisp = c.joinMonth ? new Date(c.joinMonth+'-01').toLocaleDateString('en-IN',{month:'long',year:'numeric'}) : '—';
+
+  // Document checklist progress
+  const docs = c.docs || {};
+  const docsChecked = DOC_LIST.filter(d => docs[d.id]).length;
+  const docsPct = Math.round((docsChecked/DOC_LIST.length)*100);
+
+  // Score display
+  const sc = c.score || {};
+  const scoreHtml = (c.status === 'slot_booked' || c.status === 'accepted' || c.status === 'rescheduled')
+    ? `<div class="det-sec" id="scoreSec">
+        <div class="det-title">📊 Interview Score Card</div>
+        ${['technical','communication','attitude','analytical'].map(k => {
+          const labels = {technical:'Technical Knowledge',communication:'Communication',attitude:'Attitude & Professionalism',analytical:'Analytical Ability'};
+          return `<div class="det-row mb-1"><span class="det-lbl">${labels[k]}</span>
+            <div class="star-group" id="stars-${k}">${[1,2,3,4,5].map(n =>
+              `<button class="star-btn ${(sc[k]||0)>=n?'active':''}" data-k="${k}" data-n="${n}" onclick="rateStar('${id}','${k}',${n})">★</button>`
+            ).join('')}</div>
+          </div>`;
+        }).join('')}
+        <div class="mt-2">
+          <label class="form-label" style="font-size:.78rem;">Overall Recommendation</label>
+          <select class="form-select form-select-sm" id="scoreRec" onchange="saveScore('${id}')">
+            <option value="">Select…</option>
+            <option ${sc.recommendation==='Strongly Recommend'?'selected':''}>Strongly Recommend</option>
+            <option ${sc.recommendation==='Recommend'?'selected':''}>Recommend</option>
+            <option ${sc.recommendation==='Neutral'?'selected':''}>Neutral</option>
+            <option ${sc.recommendation==='Not Recommended'?'selected':''}>Not Recommended</option>
+          </select>
+        </div>
+        <div class="mt-2">
+          <label class="form-label" style="font-size:.78rem;">Score Notes</label>
+          <textarea class="form-control form-control-sm" id="scoreNotes" rows="2" placeholder="Interview observations…">${sc.notes||''}</textarea>
+        </div>
+        <button class="btn btn-primary-sm mt-2" onclick="saveScore('${id}')"><i class="bi bi-save me-1"></i>Save Score</button>
+      </div>` : '';
+
+  // Interviewer assignment
+  const panelMembers = (_cfgCache.panelMembers||'').split('\n').map(s=>s.trim()).filter(Boolean);
+  const interviewerHtml = `<div class="det-sec">
+    <div class="det-title">👤 Interview Panel Assignment</div>
+    <select class="form-select form-select-sm" id="interviewerSel">
+      <option value="">Not assigned</option>
+      ${panelMembers.map(m => `<option ${c.interviewer===m?'selected':''}>${m}</option>`).join('')}
+    </select>
+    <button class="btn btn-primary-sm mt-2" onclick="saveInterviewer('${id}')"><i class="bi bi-person-check me-1"></i>Assign</button>
+  </div>`;
+
+  // Document checklist (shown for accepted)
+  const docChecklistHtml = (c.status === 'accepted')
+    ? `<div class="det-sec">
+        <div class="det-title">📂 Post-Selection Document Checklist</div>
+        <div class="d-flex justify-content-between mb-1" style="font-size:.8rem;"><span>${docsChecked}/${DOC_LIST.length} documents collected</span><span>${docsPct}%</span></div>
+        <div class="doc-progress"><div class="doc-progress-bar" style="width:${docsPct}%"></div></div>
+        ${DOC_LIST.map(d => `
+          <div class="doc-check-item ${docs[d.id]?'checked':''}">
+            <input type="checkbox" id="doc-${d.id}" ${docs[d.id]?'checked':''} onchange="saveDoc('${id}','${d.id}',this.checked)">
+            <label for="doc-${d.id}" style="cursor:pointer;">${d.label}</label>
+            ${docs[d.id] ? '<i class="bi bi-check-circle-fill text-success ms-auto"></i>' : ''}
+          </div>`).join('')}
+      </div>` : '';
 
   document.getElementById('modalCandName').textContent = c.name;
   document.getElementById('detailBody').innerHTML = `
@@ -713,24 +1003,30 @@ function openDetail(id) {
     <div class="det-title">Application Info</div>
     <div class="det-row"><span class="det-lbl">App ID</span><span class="det-val"><code>${c.id}</code></span></div>
     <div class="det-row"><span class="det-lbl">Submitted</span><span class="det-val">${submitted}</span></div>
-    <div class="det-row"><span class="det-lbl">Status</span><span class="det-val"><span class="badge-${c.status}">${c.status}</span></span></div>
+    <div class="det-row"><span class="det-lbl">Status</span><span class="det-val"><span class="badge-${c.status||'applied'}">${STATUS_LABEL[c.status]||c.status}</span></span></div>
+    ${c.slotDate ? `<div class="det-row"><span class="det-lbl">Interview Slot</span><span class="det-val fw-semibold">${fmtDate(c.slotDate)} at ${fmt12(c.slotTime)}</span></div>` : ''}
   </div>
   <div class="det-sec">
     <div class="det-title">Profile</div>
     <div class="det-row"><span class="det-lbl">Category</span><span class="det-val">${CAT_LABEL[c.category]||c.category}</span></div>
-    ${(c.domains||[]).length ? `<div class="det-row"><span class="det-lbl">Domain(s)</span><span class="det-val">${domText}</span></div>` : ''}
+    ${c.articleshipType ? `<div class="det-row"><span class="det-lbl">Articleship Type</span><span class="det-val">${c.articleshipType==='transfer'?'Transfer Article':'Fresh Article'}</span></div>` : ''}
+    ${c.prevFirm ? `<div class="det-row"><span class="det-lbl">Previous Firm</span><span class="det-val">${c.prevFirm}</span></div>` : ''}
+    ${c.prevPrincipal ? `<div class="det-row"><span class="det-lbl">Previous Principal</span><span class="det-val">${c.prevPrincipal}</span></div>` : ''}
+    ${c.monthsCompleted ? `<div class="det-row"><span class="det-lbl">Months Completed</span><span class="det-val">${c.monthsCompleted}</span></div>` : ''}
+    ${(c.domains||[]).length ? `<div class="det-row"><span class="det-lbl">Area(s) of Interest</span><span class="det-val">${domText}</span></div>` : ''}
   </div>
   <div class="det-sec">
     <div class="det-title">CA Exam Performance</div>
-    <div class="det-row"><span class="det-lbl">Group 1 Marks</span><span class="det-val fw-bold">${c.g1m}/400 &nbsp;(${g1pct}%)</span></div>
+    <div class="det-row"><span class="det-lbl">Group 1 Marks</span><span class="det-val fw-bold">${c.g1m}/400 (${g1pct}%)</span></div>
     <div class="score-bar-wrap mb-2"><div class="score-bar" style="width:${g1pct}%"></div></div>
     <div class="det-row"><span class="det-lbl">Group 1 Attempts</span><span class="det-val">${c.g1a}</span></div>
     <hr class="my-2">
     ${c.g2na
       ? '<div class="det-row"><span class="det-lbl">Group 2</span><span class="det-val text-muted">Not yet attempted</span></div>'
-      : `<div class="det-row"><span class="det-lbl">Group 2 Marks</span><span class="det-val fw-bold">${c.g2m}/400 &nbsp;(${g2pct}%)</span></div>
+      : `<div class="det-row"><span class="det-lbl">Group 2 Marks</span><span class="det-val fw-bold">${c.g2m}/400 (${g2pct}%)</span></div>
          <div class="score-bar-wrap mb-2"><div class="score-bar" style="width:${g2pct}%"></div></div>
          <div class="det-row"><span class="det-lbl">Group 2 Attempts</span><span class="det-val">${c.g2a}</span></div>`}
+    ${c.icaiRegNo ? `<div class="det-row"><span class="det-lbl">ICAI Reg. No.</span><span class="det-val fw-bold">${c.icaiRegNo}</span></div>` : ''}
   </div>
   <div class="det-sec">
     <div class="det-title">Personal Details</div>
@@ -738,11 +1034,7 @@ function openDetail(id) {
     <div class="det-row"><span class="det-lbl">Phone</span><span class="det-val">${c.phone}</span></div>
     <div class="det-row"><span class="det-lbl">Location</span><span class="det-val">${c.city}, ${c.state}</span></div>
     <div class="det-row"><span class="det-lbl">Languages</span><span class="det-val">${(c.langs||[]).join(', ')||'—'}</span></div>
-  </div>
-  <div class="det-sec">
-    <div class="det-title">Interview Slot</div>
-    <div class="det-row"><span class="det-lbl">Booked</span><span class="det-val fw-semibold">${c.slotDate ? fmtDate(c.slotDate)+' at '+fmt12(c.slotTime) : '—'}</span></div>
-    <div class="det-row"><span class="det-lbl">Duration</span><span class="det-val">${c.slotDuration||30} min</span></div>
+    ${c.joinMonth ? `<div class="det-row"><span class="det-lbl">Expected Joining</span><span class="det-val">${joinDisp}</span></div>` : ''}
   </div>
   ${c.resumeB64
     ? `<div class="det-sec"><div class="det-title">Resume</div>
@@ -752,15 +1044,26 @@ function openDetail(id) {
          <a href="${c.resumeB64}" download="${c.resumeName}" class="btn btn-primary-sm ms-auto"><i class="bi bi-download me-1"></i>Download</a>
        </div></div>`
     : '<div class="text-muted" style="font-size:.82rem;padding:4px 0;"><i class="bi bi-paperclip me-1"></i>No resume uploaded.</div>'}
+  ${interviewerHtml}
+  ${scoreHtml}
+  ${docChecklistHtml}
   ${c.adminNotes ? `<div class="det-sec" style="border-color:#ffe58f;background:#fffbe6;"><div class="det-title">Admin Notes</div><p style="font-size:.85rem;margin:0;">${c.adminNotes}</p></div>` : ''}`;
 
+  // Action bar
+  const isNew = ['applied','pending'].includes(c.status);
   document.getElementById('actionBar').innerHTML = `
-    <button class="btn btn-primary-sm" onclick="setStatus('${id}','shortlisted')" ${c.status==='shortlisted'?'disabled':''}>
-      <i class="bi bi-star me-1"></i>Shortlist</button>
-    <button class="btn btn-success-sm" onclick="setStatus('${id}','accepted')" ${c.status==='accepted'?'disabled':''}>
-      <i class="bi bi-check-circle me-1"></i>Accept</button>
-    <button class="btn btn-warn-sm" onclick="openReschedule('${id}')">
-      <i class="bi bi-calendar-x me-1"></i>Reschedule</button>
+    ${isNew ? `<button class="btn btn-primary-sm" onclick="shortlistCandidate('${id}');bootstrap.Modal.getInstance(document.getElementById('detailModal'))?.hide();">
+      <i class="bi bi-trophy me-1"></i>Shortlist &amp; Send Link</button>` : ''}
+    ${isNew ? `<button class="btn btn-warn-sm" onclick="setStatus('${id}','waitlisted')">
+      <i class="bi bi-clock me-1"></i>Waitlist</button>` : ''}
+    ${c.status === 'slot_booked' || c.status === 'rescheduled' ? `
+      <button class="btn btn-success-sm" onclick="setStatus('${id}','accepted')">
+        <i class="bi bi-check-circle me-1"></i>Accept</button>
+      <button class="btn btn-warn-sm" onclick="openReschedule('${id}')">
+        <i class="bi bi-calendar-x me-1"></i>Reschedule</button>` : ''}
+    ${c.status === 'accepted' ? `
+      <button class="btn btn-purple-sm" onclick="generateOfferLetter('${id}')">
+        <i class="bi bi-file-earmark-text me-1"></i>Offer Letter</button>` : ''}
     <button class="btn btn-danger-sm" onclick="setStatus('${id}','rejected')" ${c.status==='rejected'?'disabled':''}>
       <i class="bi bi-x-circle me-1"></i>Reject</button>`;
 
@@ -768,72 +1071,95 @@ function openDetail(id) {
   new bootstrap.Modal(document.getElementById('detailModal')).show();
 }
 
-async function setStatus(id, status) {
+async function setStatus(id, status, silent) {
   await firebase.database().ref('candidates/'+id+'/status').set(status);
-  bootstrap.Modal.getInstance(document.getElementById('detailModal'))?.hide();
-  showToast(`Candidate marked as "${status}".`, status==='rejected'?'danger':'success');
-  // Send status email for accepted or rejected
-  if (status === 'accepted' || status === 'rejected') {
+  if (!silent) {
+    bootstrap.Modal.getInstance(document.getElementById('detailModal'))?.hide();
+    showToast(`Candidate marked as "${STATUS_LABEL[status]||status}".`, status==='rejected'?'danger':'success');
+  }
+  if (['accepted','rejected','waitlisted'].includes(status)) {
     await sendStatusEmail(id, status);
   }
 }
 
 // ═══════════════════════════════════════════════════════
-//  STATUS EMAILS (acceptance & rejection)
+//  SCORING
 // ═══════════════════════════════════════════════════════
-async function sendStatusEmail(candId, status) {
-  try {
-    const [cfSnap, candSnap] = await Promise.all([
-      firebase.database().ref('config').once('value'),
-      firebase.database().ref('candidates/'+candId).once('value')
-    ]);
-    const cf   = cfSnap.val()   || {};
-    const cand = candSnap.val() || {};
-    if (!cf.ejsSvc || !cf.ejsKey) return;  // EmailJS not configured
-
-    const templateId = status === 'accepted'    ? cf.ejsAccTpl   :
-                       status === 'rescheduled' ? cf.ejsReschTpl :
-                                                  cf.ejsRejTpl;
-    if (!templateId) {
-      showToast(`No ${status} email template configured in Settings. Email not sent.`, 'warn');
-      return;
-    }
-
-    // Init EmailJS with the stored key
-    emailjs.init(cf.ejsKey);
-
-    await emailjs.send(cf.ejsSvc, templateId, {
-      to_name:   cand.name    || '',
-      to_email:  cand.email   || '',
-      app_id:    cand.id      || candId,
-      slot_date: cand.slotDate ? fmt12Date(cand.slotDate) : 'To be confirmed',
-      slot_time: cand.slotTime ? fmt12(cand.slotTime)     : 'To be confirmed',
-      firm_name: cf.firmName  || 'Our Firm',
-      status:    status
-    });
-
-    const label = status === 'accepted' ? 'Acceptance' : status === 'rescheduled' ? 'Reschedule' : 'Rejection';
-    showToast(`${label} email sent to ${cand.email}.`, 'success');
-  } catch(e) {
-    console.warn('Status email error:', e);
-    showToast('Email could not be sent: ' + e.message, 'danger');
-  }
+async function rateStar(candId, key, n) {
+  const stars = document.querySelectorAll(`#stars-${key} .star-btn`);
+  stars.forEach((b, i) => b.classList.toggle('active', i < n));
+  // Auto-save
+  await _patchScore(candId, {[key]: n});
 }
 
-function fmt12Date(d) {
-  if (!d) return '—';
-  return new Date(d+'T00:00:00').toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+async function saveScore(candId) {
+  const sc = {};
+  ['technical','communication','attitude','analytical'].forEach(k => {
+    const active = document.querySelectorAll(`#stars-${k} .star-btn.active`);
+    sc[k] = active.length;
+  });
+  sc.recommendation = document.getElementById('scoreRec')?.value || '';
+  sc.notes          = document.getElementById('scoreNotes')?.value || '';
+  await _patchScore(candId, sc);
+  showToast('Score saved.', 'success');
 }
 
-async function saveNotes() {
-  if (!activeCandId) return;
-  const notes = document.getElementById('adminNotesTxt').value;
-  await firebase.database().ref('candidates/'+activeCandId+'/adminNotes').set(notes);
-  showToast('Notes saved.', 'success');
+async function _patchScore(candId, patch) {
+  const existing = allCandidates[candId]?.score || {};
+  const merged   = {...existing, ...patch};
+  await firebase.database().ref('candidates/'+candId+'/score').set(merged);
 }
 
 // ═══════════════════════════════════════════════════════
-//  RESCHEDULE
+//  INTERVIEWER ASSIGNMENT
+// ═══════════════════════════════════════════════════════
+async function saveInterviewer(candId) {
+  const val = document.getElementById('interviewerSel')?.value || '';
+  await firebase.database().ref('candidates/'+candId+'/interviewer').set(val);
+  showToast(val ? `Assigned to ${val}.` : 'Assignment cleared.', 'success');
+}
+
+// ═══════════════════════════════════════════════════════
+//  DOCUMENT CHECKLIST
+// ═══════════════════════════════════════════════════════
+async function saveDoc(candId, docId, checked) {
+  await firebase.database().ref(`candidates/${candId}/docs/${docId}`).set(checked);
+  const item = document.querySelector(`#doc-${docId}`)?.closest('.doc-check-item');
+  if (item) item.classList.toggle('checked', checked);
+  showToast(checked ? 'Document marked as received.' : 'Document unchecked.', checked?'success':'warn');
+}
+
+// ═══════════════════════════════════════════════════════
+//  OFFER LETTER GENERATION
+// ═══════════════════════════════════════════════════════
+function generateOfferLetter(candId) {
+  const c = allCandidates[candId];
+  if (!c) return;
+  const template  = _cfgCache.offerTemplate || DEFAULT_OFFER_TEMPLATE;
+  const firmName  = _cfgCache.firmName      || 'Our Firm';
+  const stipend   = _cfgCache.stipend       || '________';
+  const today     = new Date().toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'});
+  const joining   = c.joinMonth
+    ? new Date(c.joinMonth+'-01').toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'})
+    : '________________';
+  const catDesc   = CAT_LABEL[c.category] || c.category || '________________';
+
+  const filled = template
+    .replace(/\{\{candidate_name\}\}/g,  c.name    || '')
+    .replace(/\{\{joining_date\}\}/g,    joining)
+    .replace(/\{\{stipend\}\}/g,         stipend)
+    .replace(/\{\{firm_name\}\}/g,       firmName)
+    .replace(/\{\{category_desc\}\}/g,   catDesc.toUpperCase())
+    .replace(/\{\{today_date\}\}/g,      today)
+    .replace(/\{\{icai_reg\}\}/g,        c.icaiRegNo || '________________');
+
+  document.getElementById('offerLetterContent').textContent = filled;
+  bootstrap.Modal.getInstance(document.getElementById('detailModal'))?.hide();
+  new bootstrap.Modal(document.getElementById('offerModal')).show();
+}
+
+// ═══════════════════════════════════════════════════════
+//  RESCHEDULE (admin-initiated)
 // ═══════════════════════════════════════════════════════
 function openReschedule(id) {
   reschedCandId = id; reschedNewSlotId = null;
@@ -841,22 +1167,19 @@ function openReschedule(id) {
   const today = new Date().toISOString().split('T')[0];
 
   const available = Object.values(allSlots).filter(s => {
-    const notPast = s.date >= today;
-    const notFull = (s.bookedBy||[]).length < (s.maxCandidates||1);
-    const notSame = s.id !== cand.slotId;
-    return notPast && (notFull || (s.bookedBy||[]).includes(id)) && notSame;
+    return s.date >= today && s.id !== cand.slotId &&
+      ((s.bookedBy||[]).length < (s.maxCandidates||1) || (s.bookedBy||[]).includes(id));
   }).sort((a,b) => a.date+a.time < b.date+b.time ? -1 : 1);
 
   const grp = {};
-  available.forEach(s => { if (!grp[s.date]) grp[s.date] = []; grp[s.date].push(s); });
+  available.forEach(s => { if (!grp[s.date]) grp[s.date]=[]; grp[s.date].push(s); });
 
   let html = '';
   if (!available.length) {
     html = '<div class="alert alert-warning">No alternative slots available. Please add more slots first.</div>';
   } else {
     Object.keys(grp).sort().forEach(date => {
-      html += `<div class="fw-bold mb-2 mt-2" style="color:var(--primary);font-size:.85rem;">${fmtDate(date)}</div>`;
-      html += '<div class="slot-mini-grid">';
+      html += `<div class="fw-bold mb-2 mt-2" style="color:var(--primary);font-size:.85rem;">${fmtDate(date)}</div><div class="slot-mini-grid">`;
       grp[date].forEach(s => {
         html += `<div class="slot-mini-btn" onclick="selReschedSlot('${s.id}',this)" data-rsid="${s.id}">
           <strong>${fmt12(s.time)}</strong><br><small>${s.duration||30} min</small>
@@ -866,7 +1189,6 @@ function openReschedule(id) {
     });
   }
   document.getElementById('reschedBody').innerHTML = html;
-
   bootstrap.Modal.getInstance(document.getElementById('detailModal'))?.hide();
   new bootstrap.Modal(document.getElementById('reschedModal')).show();
 }
@@ -878,37 +1200,74 @@ function selReschedSlot(id, el) {
 }
 
 async function confirmReschedule() {
-  if (!reschedNewSlotId) { showToast('Please select a new slot.', 'warn'); return; }
+  if (!reschedNewSlotId) { showToast('Please select a new slot.','warn'); return; }
   const cand  = allCandidates[reschedCandId];
   const newSl = allSlots[reschedNewSlotId];
   if (!cand || !newSl) return;
-
   const updates = {};
-
-  // Release old slot
   if (cand.slotId && allSlots[cand.slotId]) {
-    const oldBooked = (allSlots[cand.slotId].bookedBy || []).filter(b => b !== cand.id);
-    updates['slots/'+cand.slotId+'/bookedBy'] = oldBooked;
+    updates['slots/'+cand.slotId+'/bookedBy'] = (allSlots[cand.slotId].bookedBy||[]).filter(b => b !== cand.id);
   }
-
-  // Book new slot
-  const newBooked = [...(newSl.bookedBy||[])];
-  if (!newBooked.includes(cand.id)) newBooked.push(cand.id);
-  updates['slots/'+reschedNewSlotId+'/bookedBy'] = newBooked;
-
-  // Update candidate
-  updates['candidates/'+cand.id+'/slotId']       = newSl.id;
-  updates['candidates/'+cand.id+'/slotDate']      = newSl.date;
-  updates['candidates/'+cand.id+'/slotTime']      = newSl.time;
-  updates['candidates/'+cand.id+'/slotDuration']  = newSl.duration || 30;
-  updates['candidates/'+cand.id+'/status']        = 'rescheduled';
-
+  const nb = [...(newSl.bookedBy||[])]; if (!nb.includes(cand.id)) nb.push(cand.id);
+  updates['slots/'+reschedNewSlotId+'/bookedBy'] = nb;
+  updates['candidates/'+cand.id+'/slotId']      = newSl.id;
+  updates['candidates/'+cand.id+'/slotDate']    = newSl.date;
+  updates['candidates/'+cand.id+'/slotTime']    = newSl.time;
+  updates['candidates/'+cand.id+'/slotDuration']= newSl.duration||30;
+  updates['candidates/'+cand.id+'/status']      = 'rescheduled';
   await firebase.database().ref().update(updates);
   bootstrap.Modal.getInstance(document.getElementById('reschedModal'))?.hide();
-  showToast('Interview rescheduled successfully.', 'success');
-
-  // Send reschedule notification email to candidate
+  showToast('Interview rescheduled.','success');
   if (FB_READY) await sendStatusEmail(cand.id, 'rescheduled');
+}
+
+// ═══════════════════════════════════════════════════════
+//  STATUS EMAILS
+// ═══════════════════════════════════════════════════════
+async function sendStatusEmail(candId, status) {
+  try {
+    const [cfSnap, candSnap] = await Promise.all([
+      firebase.database().ref('config').once('value'),
+      firebase.database().ref('candidates/'+candId).once('value')
+    ]);
+    const cf   = cfSnap.val()   || {};
+    const cand = candSnap.val() || {};
+    if (!cf.ejsSvc || !cf.ejsKey) return;
+
+    const tplMap = {
+      accepted:'ejsAccTpl', rejected:'ejsRejTpl',
+      rescheduled:'ejsReschTpl', waitlisted:'ejsWaitTpl'
+    };
+    const templateId = cf[tplMap[status]];
+    if (!templateId) {
+      showToast(`No ${status} email template configured in Settings.`, 'warn'); return;
+    }
+    emailjs.init(cf.ejsKey);
+    await emailjs.send(cf.ejsSvc, templateId, {
+      to_name:   cand.name    || '',
+      to_email:  cand.email   || '',
+      app_id:    cand.id      || candId,
+      slot_date: cand.slotDate ? fmt12Date(cand.slotDate) : 'To be confirmed',
+      slot_time: cand.slotTime ? fmt12(cand.slotTime)     : 'To be confirmed',
+      firm_name: cf.firmName  || 'Our Firm',
+      status:    status
+    });
+    const labels = {accepted:'Acceptance',rejected:'Rejection',rescheduled:'Reschedule',waitlisted:'Waitlist'};
+    showToast(`${labels[status]||status} email sent to ${cand.email}.`, 'success');
+  } catch(e) {
+    console.warn('Status email error:', e);
+    showToast('Email could not be sent: '+e.message, 'danger');
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  NOTES
+// ═══════════════════════════════════════════════════════
+async function saveNotes() {
+  if (!activeCandId) return;
+  const notes = document.getElementById('adminNotesTxt').value;
+  await firebase.database().ref('candidates/'+activeCandId+'/adminNotes').set(notes);
+  showToast('Notes saved.','success');
 }
 
 // ═══════════════════════════════════════════════════════
@@ -918,50 +1277,60 @@ async function loadSettings() {
   if (!FB_READY) return;
   const snap = await firebase.database().ref('config').once('value');
   const c = snap.val() || {};
-  document.getElementById('cfgFirm').value      = c.firmName   || '';
-  document.getElementById('cfgEmail').value     = c.adminEmail || '';
-  document.getElementById('cfgEjsSvc').value      = c.ejsSvc      || '';
-  document.getElementById('cfgEjsTpl').value      = c.ejsTpl      || '';
-  document.getElementById('cfgEjsAccTpl').value   = c.ejsAccTpl   || '';
-  document.getElementById('cfgEjsRejTpl').value   = c.ejsRejTpl   || '';
-  document.getElementById('cfgEjsReschTpl').value = c.ejsReschTpl || '';
-  document.getElementById('cfgEjsKey').value      = c.ejsKey      || '';
-  document.getElementById('fbStatus').textContent = 'Connected';
-  document.getElementById('fbStatus').className   = 'badge bg-success ms-2';
+  document.getElementById('cfgFirm').value          = c.firmName        || '';
+  document.getElementById('cfgEmail').value         = c.adminEmail      || '';
+  document.getElementById('cfgPortalUrl').value     = c.portalUrl       || '';
+  document.getElementById('cfgStipend').value       = c.stipend         || '';
+  document.getElementById('cfgPanelMembers').value  = c.panelMembers    || '';
+  document.getElementById('cfgEjsSvc').value        = c.ejsSvc          || '';
+  document.getElementById('cfgEjsKey').value        = c.ejsKey          || '';
+  document.getElementById('cfgEjsTpl').value        = c.ejsTpl          || '';
+  document.getElementById('cfgEjsShortTpl').value   = c.ejsShortTpl     || '';
+  document.getElementById('cfgEjsSlotTpl').value    = c.ejsSlotTpl      || '';
+  document.getElementById('cfgEjsWaitTpl').value    = c.ejsWaitTpl      || '';
+  document.getElementById('cfgEjsAccTpl').value     = c.ejsAccTpl       || '';
+  document.getElementById('cfgEjsRejTpl').value     = c.ejsRejTpl       || '';
+  document.getElementById('cfgEjsReschTpl').value   = c.ejsReschTpl     || '';
+  document.getElementById('cfgOfferTemplate').value = c.offerTemplate   || DEFAULT_OFFER_TEMPLATE;
+  document.getElementById('fbStatus').textContent   = 'Connected';
+  document.getElementById('fbStatus').className     = 'badge bg-success ms-2';
 }
 
 async function saveSettings() {
-  // Password change (localStorage only)
   const cur = document.getElementById('pwdCur').value;
   const nw  = document.getElementById('pwdNew').value;
   const cn  = document.getElementById('pwdCon').value;
   if (nw || cur) {
-    if (cur !== getPwd()) { showToast('Current password is incorrect.', 'danger'); return; }
-    if (nw !== cn)        { showToast('New passwords do not match.', 'danger'); return; }
-    if (nw.length < 6)    { showToast('Password must be at least 6 characters.', 'danger'); return; }
+    if (cur !== getPwd()) { showToast('Current password is incorrect.','danger'); return; }
+    if (nw !== cn)        { showToast('New passwords do not match.','danger'); return; }
+    if (nw.length < 6)    { showToast('Password must be at least 6 characters.','danger'); return; }
     setPwd(nw);
     document.getElementById('pwdCur').value = '';
     document.getElementById('pwdNew').value = '';
     document.getElementById('pwdCon').value = '';
   }
-
-  // Save firm/EmailJS config to Firebase (so candidate form can read it)
   if (FB_READY) {
     await firebase.database().ref('config').set({
-      firmName:   document.getElementById('cfgFirm').value.trim(),
-      adminEmail: document.getElementById('cfgEmail').value.trim(),
-      ejsSvc:      document.getElementById('cfgEjsSvc').value.trim(),
-      ejsTpl:      document.getElementById('cfgEjsTpl').value.trim(),
-      ejsAccTpl:   document.getElementById('cfgEjsAccTpl').value.trim(),
-      ejsRejTpl:   document.getElementById('cfgEjsRejTpl').value.trim(),
-      ejsReschTpl: document.getElementById('cfgEjsReschTpl').value.trim(),
-      ejsKey:      document.getElementById('cfgEjsKey').value.trim()
+      firmName:        document.getElementById('cfgFirm').value.trim(),
+      adminEmail:      document.getElementById('cfgEmail').value.trim(),
+      portalUrl:       document.getElementById('cfgPortalUrl').value.trim(),
+      stipend:         document.getElementById('cfgStipend').value.trim(),
+      panelMembers:    document.getElementById('cfgPanelMembers').value,
+      ejsSvc:          document.getElementById('cfgEjsSvc').value.trim(),
+      ejsKey:          document.getElementById('cfgEjsKey').value.trim(),
+      ejsTpl:          document.getElementById('cfgEjsTpl').value.trim(),
+      ejsShortTpl:     document.getElementById('cfgEjsShortTpl').value.trim(),
+      ejsSlotTpl:      document.getElementById('cfgEjsSlotTpl').value.trim(),
+      ejsWaitTpl:      document.getElementById('cfgEjsWaitTpl').value.trim(),
+      ejsAccTpl:       document.getElementById('cfgEjsAccTpl').value.trim(),
+      ejsRejTpl:       document.getElementById('cfgEjsRejTpl').value.trim(),
+      ejsReschTpl:     document.getElementById('cfgEjsReschTpl').value.trim(),
+      offerTemplate:   document.getElementById('cfgOfferTemplate').value
     });
   }
-
   const ss = document.getElementById('settingsSaved');
-  ss.style.display = 'inline'; setTimeout(() => ss.style.display='none', 3000);
-  showToast('Settings saved!', 'success');
+  ss.style.display='inline'; setTimeout(() => ss.style.display='none', 3000);
+  showToast('Settings saved!','success');
 }
 
 // ═══════════════════════════════════════════════════════
@@ -969,28 +1338,37 @@ async function saveSettings() {
 // ═══════════════════════════════════════════════════════
 function exportCSV() {
   const cands = Object.values(allCandidates);
-  if (!cands.length) { showToast('No candidates to export yet.', 'warn'); return; }
-  const headers = ['Application ID','Submitted At','Status','Category','Domain(s)','Name','Email','Phone','City','State',
-    'Languages','Group1 Marks','Group1 Attempts','Group2 Marks','Group2 Attempts','G2 Not Attempted',
-    'Interview Date','Interview Time','Admin Notes'];
-  const rows = cands.map(c => [
-    c.id,
-    new Date(c.submittedAt).toLocaleDateString('en-IN'),
-    c.status,
-    CAT_LABEL[c.category]||c.category,
-    (c.domains||[]).map(d => d==='others' ? c.othersText : DOM_LABEL[d]).join('; '),
-    c.name, c.email, c.phone, c.city, c.state,
-    (c.langs||[]).join('; '),
-    c.g1m, c.g1a, c.g2m||'', c.g2a||'', c.g2na?'Yes':'No',
-    c.slotDate||'', c.slotTime ? fmt12(c.slotTime) : '',
-    (c.adminNotes||'').replace(/"/g,'""')
-  ].map(v => `"${v}"`));
+  if (!cands.length) { showToast('No candidates to export.','warn'); return; }
+  const headers = ['App ID','Submitted','Status','Category','Area(s)','Name','Email','Phone','City','State',
+    'Languages','G1 Marks','G1 Attempts','G2 Marks','G2 Attempts','G2 N/A',
+    'ICAI Reg No','Articleship Type','Prev Firm','Transfer Date','Months Completed',
+    'Exp. Joining','Interviewer','Score-Technical','Score-Comm','Score-Attitude','Score-Analytical','Recommendation',
+    'Interview Date','Interview Time','Docs Collected','Admin Notes'];
+  const rows = cands.map(c => {
+    const sc = c.score || {};
+    const docs = c.docs || {};
+    const docsCount = DOC_LIST.filter(d => docs[d.id]).length;
+    const domText = (c.domains||[]).map(d => DOM_LABEL[d]||d).join('; ');
+    return [
+      c.id, new Date(c.submittedAt).toLocaleDateString('en-IN'),
+      STATUS_LABEL[c.status]||c.status, CAT_LABEL[c.category]||c.category, domText,
+      c.name, c.email, c.phone, c.city, c.state,
+      (c.langs||[]).join('; '),
+      c.g1m, c.g1a, c.g2m||'', c.g2a||'', c.g2na?'Yes':'No',
+      c.icaiRegNo||'', c.articleshipType||'', c.prevFirm||'', c.transferDate||'', c.monthsCompleted||'',
+      c.joinMonth||'', c.interviewer||'',
+      sc.technical||'', sc.communication||'', sc.attitude||'', sc.analytical||'', sc.recommendation||'',
+      c.slotDate||'', c.slotTime ? fmt12(c.slotTime) : '',
+      `${docsCount}/${DOC_LIST.length}`,
+      (c.adminNotes||'').replace(/"/g,'""')
+    ].map(v => `"${v}"`);
+  });
   const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
   const a = document.createElement('a');
-  a.href = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(csv);
+  a.href = 'data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
   a.download = `recruitment_${new Date().toISOString().split('T')[0]}.csv`;
   a.click();
-  showToast('CSV downloaded. Save it to your OneDrive folder.', 'success');
+  showToast('CSV downloaded!','success');
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1005,9 +1383,24 @@ function fmtDate(d) {
   if (!d) return '—';
   return new Date(d+'T00:00:00').toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
 }
+function fmt12Date(d) {
+  if (!d) return '—';
+  return new Date(d+'T00:00:00').toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+}
 function shortDate(d) {
   if (!d) return '—';
   return new Date(d+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+}
+
+let _toastTimer;
+function showToast(msg, type) {
+  clearTimeout(_toastTimer);
+  let el = document.getElementById('_adminToast');
+  if (!el) { el = document.createElement('div'); el.id='_adminToast'; el.className='toast-msg'; el.style.display='none'; document.body.appendChild(el); }
+  el.textContent = msg;
+  el.style.background = type==='danger' ? '#dc3545' : type==='success' ? '#198754' : type==='warn' ? '#fd7e14' : '#0d6efd';
+  el.style.display = 'block';
+  _toastTimer = setTimeout(() => { el.style.display='none'; }, 4500);
 }
 </script>
 </body>
