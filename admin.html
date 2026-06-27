@@ -932,8 +932,8 @@ function openDetail(id) {
   if (!c) return;
 
   const domText = (c.domains||[]).map(d => d==='others' ? (c.othersText||'Others') : DOM_LABEL[d]).join(', ') || '—';
-  const g1pct = Math.round((+c.g1m/400)*100);
-  const g2pct = c.g2na ? null : Math.round((+c.g2m/400)*100);
+  const g1pct = Math.round((+c.g1m/300)*100);
+  const g2pct = c.g2na ? null : Math.round((+c.g2m/300)*100);
   const submitted = new Date(c.submittedAt).toLocaleString('en-IN',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
   const joinDisp = c.joinMonth ? new Date(c.joinMonth+'-01').toLocaleDateString('en-IN',{month:'long',year:'numeric'}) : '—';
 
