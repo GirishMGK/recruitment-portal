@@ -384,7 +384,7 @@ body{background:var(--bg);font-family:'Segoe UI',system-ui,sans-serif;color:#333
       <div class="row g-3">
         <div class="col-md-6">
           <label class="form-label">Total Marks Obtained (out of 300)</label>
-          <input type="number" class="form-control" id="g1m" min="0" max="300" placeholder="e.g. 210">
+          <input type="number" class="form-control" id="g1m" min="0" max="300" placeholder="e.g. 210" oninput="capMarks(this)">
         </div>
         <div class="col-md-6">
           <label class="form-label">Number of Attempts</label>
@@ -405,7 +405,7 @@ body{background:var(--bg);font-family:'Segoe UI',system-ui,sans-serif;color:#333
       <div id="g2fields" class="row g-3">
         <div class="col-md-6">
           <label class="form-label">Total Marks Obtained (out of 300)</label>
-          <input type="number" class="form-control" id="g2m" min="0" max="300" placeholder="e.g. 195">
+          <input type="number" class="form-control" id="g2m" min="0" max="300" placeholder="e.g. 195" oninput="capMarks(this)">
         </div>
         <div class="col-md-6">
           <label class="form-label">Number of Attempts</label>
@@ -421,12 +421,12 @@ body{background:var(--bg);font-family:'Segoe UI',system-ui,sans-serif;color:#333
     <!-- ICAI Registration Number -->
     <div class="row g-3 mb-3">
       <div class="col-md-6">
-        <label class="form-label">ICAI Registration Number <span class="text-muted fw-normal">(optional)</span></label>
+        <label class="form-label">ICAI Registration Number <span class="text-danger">*</span></label>
         <input type="text" class="form-control" id="icaiRegNo" placeholder="e.g. BRO0123456 or CRO0123456" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()">
         <div class="text-muted mt-1" style="font-size:.76rem;">Student Registration No. from ICAI portal</div>
       </div>
       <div class="col-md-6">
-        <label class="form-label">Expected Joining Month <span class="text-muted fw-normal">(optional)</span></label>
+        <label class="form-label">Expected Joining Month <span class="text-danger">*</span></label>
         <input type="month" class="form-control" id="joinMonth">
         <div class="text-muted mt-1" style="font-size:.76rem;">Preferred month and year to join</div>
       </div>
@@ -725,6 +725,13 @@ function togDom(d, el) {
   document.getElementById('othersBox').style.display = F.domains.includes('others') ? 'block' : 'none';
 }
 
+function capMarks(el) {
+  if (el.value === '') return;
+  let v = parseInt(el.value, 10);
+  if (isNaN(v) || v < 0) { el.value = ''; return; }
+  if (v > 300) el.value = 300;
+}
+
 function togG2() {
   F.g2na = document.getElementById('g2na').checked;
   document.getElementById('g2fields').style.display = F.g2na ? 'none' : '';
@@ -869,14 +876,17 @@ function validate(s) {
     F.g1m = document.getElementById('g1m').value;
     F.g1a = document.getElementById('g1a').value;
     if (!F.g1m || !F.g1a) { showErr('Please enter Group 1 marks and attempts.'); return false; }
-    if (+F.g1m < 0 || +F.g1m > 300) { showErr('Group 1 marks must be 0–300.'); return false; }
+    if (+F.g1m < 0 || +F.g1m > 300) { showErr('Group 1 marks must be between 0 and 300.'); return false; }
     if (!F.g2na) {
       F.g2m = document.getElementById('g2m').value;
       F.g2a = document.getElementById('g2a').value;
       if (!F.g2m || !F.g2a) { showErr('Enter Group 2 marks and attempts, or tick "Not yet attempted".'); return false; }
+      if (+F.g2m < 0 || +F.g2m > 300) { showErr('Group 2 marks must be between 0 and 300.'); return false; }
     }
     F.icaiRegNo = document.getElementById('icaiRegNo').value.trim();
     F.joinMonth = document.getElementById('joinMonth').value;
+    if (!F.icaiRegNo) { showErr('Please enter your ICAI Registration Number.'); return false; }
+    if (!F.joinMonth) { showErr('Please select your expected joining month.'); return false; }
     if (F.category === 'article') {
       if (F.articleshipType === 'transfer') {
         F.prevFirm        = document.getElementById('prevFirm').value.trim();
