@@ -684,6 +684,9 @@ window.addEventListener('DOMContentLoaded', async () => {
     ref('slots').on('value', snap => { fbSlots = snap.val() || {}; });
   }
 
+  // Restrict expected joining month to current month or later
+  document.getElementById('joinMonth').min = currentMonthStr();
+
   // Build language chips
   const lw = document.getElementById('langWrap');
   LANGS.forEach(l => {
@@ -728,8 +731,15 @@ function togDom(d, el) {
 function capMarks(el) {
   if (el.value === '') return;
   let v = parseInt(el.value, 10);
-  if (isNaN(v) || v < 0) { el.value = ''; return; }
+  if (isNaN(v)) { el.value = ''; return; }
+  if (v < 0) { el.value = 0; return; }
   if (v > 300) el.value = 300;
+}
+
+// Earliest selectable expected-joining month = current month (YYYY-MM)
+function currentMonthStr() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
 }
 
 function togG2() {
@@ -887,6 +897,7 @@ function validate(s) {
     F.joinMonth = document.getElementById('joinMonth').value;
     if (!F.icaiRegNo) { showErr('Please enter your ICAI Registration Number.'); return false; }
     if (!F.joinMonth) { showErr('Please select your expected joining month.'); return false; }
+    if (F.joinMonth < currentMonthStr()) { showErr('Expected joining month cannot be in the past.'); return false; }
     if (F.category === 'article') {
       if (F.articleshipType === 'transfer') {
         F.prevFirm        = document.getElementById('prevFirm').value.trim();
