@@ -929,6 +929,15 @@ async function doSubmit() {
   btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting…';
 
   try {
+    // Prevent duplicate applications with the same ICAI Registration Number
+    const dupSnap = await firebase.database().ref('candidates')
+      .orderByChild('icaiRegNo').equalTo(F.icaiRegNo).once('value');
+    if (dupSnap.exists()) {
+      btn.disabled = false; btn.innerHTML = '<i class="bi bi-send"></i>&nbsp; Submit Application';
+      showErr('An application with this ICAI Registration Number already exists. Use the Track tab to check your status.');
+      return;
+    }
+
     const appId = 'APP' + Date.now();
     const cand = {
       id: appId, submittedAt: new Date().toISOString(), status: 'applied',
