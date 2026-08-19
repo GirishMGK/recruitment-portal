@@ -578,6 +578,16 @@ function getPwd()  { try { return localStorage.getItem('adminPwd') || 'admin123'
 function setPwd(p) { try { localStorage.setItem('adminPwd', p); } catch(e) {} }
 
 // ═══════════════════════════════════════════════════════
+//  ESCAPE — candidate-supplied text is untrusted; never inject
+//  it into innerHTML unescaped (stored-XSS prevention)
+// ═══════════════════════════════════════════════════════
+const ESC_MAP = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
+function esc(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/[&<>"']/g, c => ESC_MAP[c]);
+}
+
+// ═══════════════════════════════════════════════════════
 //  LOGIN
 // ═══════════════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
@@ -669,11 +679,11 @@ function loadDashboard() {
   document.getElementById('recentTable').innerHTML = `<table><thead><tr>
     <th>ID</th><th>Name</th><th>Category</th><th>Location</th><th>Status</th><th>Submitted</th>
   </tr></thead><tbody>
-  ${recent.map(c => `<tr style="cursor:pointer;" onclick="openDetail('${c.id}')">
-    <td><code style="font-size:.76rem;">${c.id}</code></td>
-    <td><strong>${c.name}</strong><br><span class="text-muted" style="font-size:.76rem;">${c.email}</span></td>
+  ${recent.map(c => `<tr style="cursor:pointer;" onclick="openDetail('${esc(c.id)}')">
+    <td><code style="font-size:.76rem;">${esc(c.id)}</code></td>
+    <td><strong>${esc(c.name)}</strong><br><span class="text-muted" style="font-size:.76rem;">${esc(c.email)}</span></td>
     <td>${CAT_LABEL[c.category]||c.category}</td>
-    <td>${c.city}, ${c.state}</td>
+    <td>${esc(c.city)}, ${esc(c.state)}</td>
     <td><span class="badge-${c.status||'applied'}">${STATUS_LABEL[c.status]||c.status}</span></td>
     <td style="font-size:.78rem;">${new Date(c.submittedAt).toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</td>
   </tr>`).join('')}
@@ -810,22 +820,22 @@ function renderCandidates() {
     const scoreBadge = scoreAvg ? `<span class="badge" style="background:${scoreAvg>=4?'#198754':scoreAvg>=3?'#ffc107':'#dc3545'};font-size:.7rem;">${'★'.repeat(scoreAvg)}</span>` : '';
     return `<tr>
       <td onclick="event.stopPropagation()">
-        <input type="checkbox" class="cand-chk" value="${c.id}" ${selectedIds.has(c.id)?'checked':''} onchange="toggleSelect('${c.id}',this)">
+        <input type="checkbox" class="cand-chk" value="${esc(c.id)}" ${selectedIds.has(c.id)?'checked':''} onchange="toggleSelect('${esc(c.id)}',this)">
       </td>
-      <td style="cursor:pointer;" onclick="openDetail('${c.id}')">
-        <strong>${c.name}</strong><br>
-        <span class="text-muted" style="font-size:.75rem;">${c.email}</span><br>
-        <span class="text-muted" style="font-size:.75rem;">${c.phone||''}</span>
+      <td style="cursor:pointer;" onclick="openDetail('${esc(c.id)}')">
+        <strong>${esc(c.name)}</strong><br>
+        <span class="text-muted" style="font-size:.75rem;">${esc(c.email)}</span><br>
+        <span class="text-muted" style="font-size:.75rem;">${esc(c.phone)||''}</span>
       </td>
       <td>${CAT_LABEL[c.category]||c.category}<br>
         ${c.articleshipType==='transfer'?'<span class="badge bg-warning text-dark" style="font-size:.68rem;">Transfer</span>':''}
       </td>
-      <td>G1: ${c.g1m}/300 (${g1pct}%)<br>${c.g2na?'<span class="text-muted" style="font-size:.78rem;">G2: N/A</span>':`G2: ${c.g2m}/300 (${g2pct}%)`}
+      <td>G1: ${esc(c.g1m)}/300 (${g1pct}%)<br>${c.g2na?'<span class="text-muted" style="font-size:.78rem;">G2: N/A</span>':`G2: ${esc(c.g2m)}/300 (${g2pct}%)`}
         <br>${scoreBadge}
       </td>
-      <td style="font-size:.8rem;">${c.icaiRegNo||'—'}</td>
+      <td style="font-size:.8rem;">${esc(c.icaiRegNo)||'—'}</td>
       <td style="font-size:.8rem;">${c.joinMonth ? new Date(c.joinMonth+'-01').toLocaleDateString('en-IN',{month:'short',year:'numeric'}) : '—'}</td>
-      <td style="font-size:.8rem;">${c.interviewer||'—'}</td>
+      <td style="font-size:.8rem;">${esc(c.interviewer)||'—'}</td>
       <td style="font-size:.8rem;">${c.slotDate ? fmt12(c.slotTime)+'<br>'+shortDate(c.slotDate) : '—'}</td>
       <td><span class="badge-${c.status||'applied'}">${STATUS_LABEL[c.status]||c.status}</span></td>
       <td><button class="btn btn-primary-sm" onclick="openDetail('${c.id}')"><i class="bi bi-eye"></i></button></td>
@@ -931,7 +941,7 @@ function openDetail(id) {
   const c = allCandidates[id];
   if (!c) return;
 
-  const domText = (c.domains||[]).map(d => d==='others' ? (c.othersText||'Others') : DOM_LABEL[d]).join(', ') || '—';
+  const domText = (c.domains||[]).map(d => d==='others' ? esc(c.othersText||'Others') : DOM_LABEL[d]).join(', ') || '—';
   const g1pct = Math.round((+c.g1m/400)*100);
   const g2pct = c.g2na ? null : Math.round((+c.g2m/400)*100);
   const submitted = new Date(c.submittedAt).toLocaleString('en-IN',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
@@ -951,13 +961,13 @@ function openDetail(id) {
           const labels = {technical:'Technical Knowledge',communication:'Communication',attitude:'Attitude & Professionalism',analytical:'Analytical Ability'};
           return `<div class="det-row mb-1"><span class="det-lbl">${labels[k]}</span>
             <div class="star-group" id="stars-${k}">${[1,2,3,4,5].map(n =>
-              `<button class="star-btn ${(sc[k]||0)>=n?'active':''}" data-k="${k}" data-n="${n}" onclick="rateStar('${id}','${k}',${n})">★</button>`
+              `<button class="star-btn ${(sc[k]||0)>=n?'active':''}" data-k="${k}" data-n="${n}" onclick="rateStar('${esc(id)}','${k}',${n})">★</button>`
             ).join('')}</div>
           </div>`;
         }).join('')}
         <div class="mt-2">
           <label class="form-label" style="font-size:.78rem;">Overall Recommendation</label>
-          <select class="form-select form-select-sm" id="scoreRec" onchange="saveScore('${id}')">
+          <select class="form-select form-select-sm" id="scoreRec" onchange="saveScore('${esc(id)}')">
             <option value="">Select…</option>
             <option ${sc.recommendation==='Strongly Recommend'?'selected':''}>Strongly Recommend</option>
             <option ${sc.recommendation==='Recommend'?'selected':''}>Recommend</option>
@@ -967,9 +977,9 @@ function openDetail(id) {
         </div>
         <div class="mt-2">
           <label class="form-label" style="font-size:.78rem;">Score Notes</label>
-          <textarea class="form-control form-control-sm" id="scoreNotes" rows="2" placeholder="Interview observations…">${sc.notes||''}</textarea>
+          <textarea class="form-control form-control-sm" id="scoreNotes" rows="2" placeholder="Interview observations…">${esc(sc.notes)}</textarea>
         </div>
-        <button class="btn btn-primary-sm mt-2" onclick="saveScore('${id}')"><i class="bi bi-save me-1"></i>Save Score</button>
+        <button class="btn btn-primary-sm mt-2" onclick="saveScore('${esc(id)}')"><i class="bi bi-save me-1"></i>Save Score</button>
       </div>` : '';
 
   // Interviewer assignment
@@ -978,9 +988,9 @@ function openDetail(id) {
     <div class="det-title">👤 Interview Panel Assignment</div>
     <select class="form-select form-select-sm" id="interviewerSel">
       <option value="">Not assigned</option>
-      ${panelMembers.map(m => `<option ${c.interviewer===m?'selected':''}>${m}</option>`).join('')}
+      ${panelMembers.map(m => `<option ${c.interviewer===m?'selected':''}>${esc(m)}</option>`).join('')}
     </select>
-    <button class="btn btn-primary-sm mt-2" onclick="saveInterviewer('${id}')"><i class="bi bi-person-check me-1"></i>Assign</button>
+    <button class="btn btn-primary-sm mt-2" onclick="saveInterviewer('${esc(id)}')"><i class="bi bi-person-check me-1"></i>Assign</button>
   </div>`;
 
   // Document checklist (shown for accepted)
@@ -991,7 +1001,7 @@ function openDetail(id) {
         <div class="doc-progress"><div class="doc-progress-bar" style="width:${docsPct}%"></div></div>
         ${DOC_LIST.map(d => `
           <div class="doc-check-item ${docs[d.id]?'checked':''}">
-            <input type="checkbox" id="doc-${d.id}" ${docs[d.id]?'checked':''} onchange="saveDoc('${id}','${d.id}',this.checked)">
+            <input type="checkbox" id="doc-${d.id}" ${docs[d.id]?'checked':''} onchange="saveDoc('${esc(id)}','${d.id}',this.checked)">
             <label for="doc-${d.id}" style="cursor:pointer;">${d.label}</label>
             ${docs[d.id] ? '<i class="bi bi-check-circle-fill text-success ms-auto"></i>' : ''}
           </div>`).join('')}
@@ -1001,7 +1011,7 @@ function openDetail(id) {
   document.getElementById('detailBody').innerHTML = `
   <div class="det-sec">
     <div class="det-title">Application Info</div>
-    <div class="det-row"><span class="det-lbl">App ID</span><span class="det-val"><code>${c.id}</code></span></div>
+    <div class="det-row"><span class="det-lbl">App ID</span><span class="det-val"><code>${esc(c.id)}</code></span></div>
     <div class="det-row"><span class="det-lbl">Submitted</span><span class="det-val">${submitted}</span></div>
     <div class="det-row"><span class="det-lbl">Status</span><span class="det-val"><span class="badge-${c.status||'applied'}">${STATUS_LABEL[c.status]||c.status}</span></span></div>
     ${c.slotDate ? `<div class="det-row"><span class="det-lbl">Interview Slot</span><span class="det-val fw-semibold">${fmtDate(c.slotDate)} at ${fmt12(c.slotTime)}</span></div>` : ''}
@@ -1010,62 +1020,62 @@ function openDetail(id) {
     <div class="det-title">Profile</div>
     <div class="det-row"><span class="det-lbl">Category</span><span class="det-val">${CAT_LABEL[c.category]||c.category}</span></div>
     ${c.articleshipType ? `<div class="det-row"><span class="det-lbl">Articleship Type</span><span class="det-val">${c.articleshipType==='transfer'?'Transfer Article':'Fresh Article'}</span></div>` : ''}
-    ${c.prevFirm ? `<div class="det-row"><span class="det-lbl">Previous Firm</span><span class="det-val">${c.prevFirm}</span></div>` : ''}
-    ${c.prevPrincipal ? `<div class="det-row"><span class="det-lbl">Previous Principal</span><span class="det-val">${c.prevPrincipal}</span></div>` : ''}
-    ${c.monthsCompleted ? `<div class="det-row"><span class="det-lbl">Months Completed</span><span class="det-val">${c.monthsCompleted}</span></div>` : ''}
+    ${c.prevFirm ? `<div class="det-row"><span class="det-lbl">Previous Firm</span><span class="det-val">${esc(c.prevFirm)}</span></div>` : ''}
+    ${c.prevPrincipal ? `<div class="det-row"><span class="det-lbl">Previous Principal</span><span class="det-val">${esc(c.prevPrincipal)}</span></div>` : ''}
+    ${c.monthsCompleted ? `<div class="det-row"><span class="det-lbl">Months Completed</span><span class="det-val">${esc(c.monthsCompleted)}</span></div>` : ''}
     ${(c.domains||[]).length ? `<div class="det-row"><span class="det-lbl">Area(s) of Interest</span><span class="det-val">${domText}</span></div>` : ''}
   </div>
   <div class="det-sec">
     <div class="det-title">CA Exam Performance</div>
-    <div class="det-row"><span class="det-lbl">Group 1 Marks</span><span class="det-val fw-bold">${c.g1m}/300 (${g1pct}%)</span></div>
+    <div class="det-row"><span class="det-lbl">Group 1 Marks</span><span class="det-val fw-bold">${esc(c.g1m)}/300 (${g1pct}%)</span></div>
     <div class="score-bar-wrap mb-2"><div class="score-bar" style="width:${g1pct}%"></div></div>
-    <div class="det-row"><span class="det-lbl">Group 1 Attempts</span><span class="det-val">${c.g1a}</span></div>
+    <div class="det-row"><span class="det-lbl">Group 1 Attempts</span><span class="det-val">${esc(c.g1a)}</span></div>
     <hr class="my-2">
     ${c.g2na
       ? '<div class="det-row"><span class="det-lbl">Group 2</span><span class="det-val text-muted">Not yet attempted</span></div>'
-      : `<div class="det-row"><span class="det-lbl">Group 2 Marks</span><span class="det-val fw-bold">${c.g2m}/300 (${g2pct}%)</span></div>
+      : `<div class="det-row"><span class="det-lbl">Group 2 Marks</span><span class="det-val fw-bold">${esc(c.g2m)}/300 (${g2pct}%)</span></div>
          <div class="score-bar-wrap mb-2"><div class="score-bar" style="width:${g2pct}%"></div></div>
-         <div class="det-row"><span class="det-lbl">Group 2 Attempts</span><span class="det-val">${c.g2a}</span></div>`}
-    ${c.icaiRegNo ? `<div class="det-row"><span class="det-lbl">ICAI Reg. No.</span><span class="det-val fw-bold">${c.icaiRegNo}</span></div>` : ''}
+         <div class="det-row"><span class="det-lbl">Group 2 Attempts</span><span class="det-val">${esc(c.g2a)}</span></div>`}
+    ${c.icaiRegNo ? `<div class="det-row"><span class="det-lbl">ICAI Reg. No.</span><span class="det-val fw-bold">${esc(c.icaiRegNo)}</span></div>` : ''}
   </div>
   <div class="det-sec">
     <div class="det-title">Personal Details</div>
-    <div class="det-row"><span class="det-lbl">Email</span><span class="det-val">${c.email}</span></div>
-    <div class="det-row"><span class="det-lbl">Phone</span><span class="det-val">${c.phone}</span></div>
-    <div class="det-row"><span class="det-lbl">Location</span><span class="det-val">${c.city}, ${c.state}</span></div>
-    ${c.preferredLocation ? `<div class="det-row"><span class="det-lbl">Preferred Office</span><span class="det-val">${{bengaluru:'Bengaluru (Head Office)',delhi:'Delhi',mumbai:'Mumbai',hyderabad:'Hyderabad'}[c.preferredLocation]||c.preferredLocation}</span></div>` : ''}
-    <div class="det-row"><span class="det-lbl">Languages</span><span class="det-val">${(c.langs||[]).join(', ')||'—'}</span></div>
+    <div class="det-row"><span class="det-lbl">Email</span><span class="det-val">${esc(c.email)}</span></div>
+    <div class="det-row"><span class="det-lbl">Phone</span><span class="det-val">${esc(c.phone)}</span></div>
+    <div class="det-row"><span class="det-lbl">Location</span><span class="det-val">${esc(c.city)}, ${esc(c.state)}</span></div>
+    ${c.preferredLocation ? `<div class="det-row"><span class="det-lbl">Preferred Office</span><span class="det-val">${esc({bengaluru:'Bengaluru (Head Office)',delhi:'Delhi',mumbai:'Mumbai',hyderabad:'Hyderabad'}[c.preferredLocation]||c.preferredLocation)}</span></div>` : ''}
+    <div class="det-row"><span class="det-lbl">Languages</span><span class="det-val">${esc((c.langs||[]).join(', '))||'—'}</span></div>
     ${c.joinMonth ? `<div class="det-row"><span class="det-lbl">Expected Joining</span><span class="det-val">${joinDisp}</span></div>` : ''}
   </div>
   ${c.resumeB64
     ? `<div class="det-sec"><div class="det-title">Resume</div>
        <div class="d-flex align-items-center gap-3">
          <i class="bi bi-file-earmark-richtext text-primary" style="font-size:1.8rem;"></i>
-         <div class="fw-semibold">${c.resumeName}</div>
-         <a href="${c.resumeB64}" download="${c.resumeName}" class="btn btn-primary-sm ms-auto"><i class="bi bi-download me-1"></i>Download</a>
+         <div class="fw-semibold">${esc(c.resumeName)}</div>
+         <a href="${c.resumeB64}" download="${esc(c.resumeName)}" class="btn btn-primary-sm ms-auto"><i class="bi bi-download me-1"></i>Download</a>
        </div></div>`
     : '<div class="text-muted" style="font-size:.82rem;padding:4px 0;"><i class="bi bi-paperclip me-1"></i>No resume uploaded.</div>'}
   ${interviewerHtml}
   ${scoreHtml}
   ${docChecklistHtml}
-  ${c.adminNotes ? `<div class="det-sec" style="border-color:#ffe58f;background:#fffbe6;"><div class="det-title">Admin Notes</div><p style="font-size:.85rem;margin:0;">${c.adminNotes}</p></div>` : ''}`;
+  ${c.adminNotes ? `<div class="det-sec" style="border-color:#ffe58f;background:#fffbe6;"><div class="det-title">Admin Notes</div><p style="font-size:.85rem;margin:0;">${esc(c.adminNotes)}</p></div>` : ''}`;
 
   // Action bar
   const isNew = ['applied','pending'].includes(c.status);
   document.getElementById('actionBar').innerHTML = `
-    ${isNew ? `<button class="btn btn-primary-sm" onclick="shortlistCandidate('${id}');bootstrap.Modal.getInstance(document.getElementById('detailModal'))?.hide();">
+    ${isNew ? `<button class="btn btn-primary-sm" onclick="shortlistCandidate('${esc(id)}');bootstrap.Modal.getInstance(document.getElementById('detailModal'))?.hide();">
       <i class="bi bi-trophy me-1"></i>Shortlist &amp; Send Link</button>` : ''}
-    ${isNew ? `<button class="btn btn-warn-sm" onclick="setStatus('${id}','waitlisted')">
+    ${isNew ? `<button class="btn btn-warn-sm" onclick="setStatus('${esc(id)}','waitlisted')">
       <i class="bi bi-clock me-1"></i>Waitlist</button>` : ''}
     ${c.status === 'slot_booked' || c.status === 'rescheduled' ? `
-      <button class="btn btn-success-sm" onclick="setStatus('${id}','accepted')">
+      <button class="btn btn-success-sm" onclick="setStatus('${esc(id)}','accepted')">
         <i class="bi bi-check-circle me-1"></i>Accept</button>
-      <button class="btn btn-warn-sm" onclick="openReschedule('${id}')">
+      <button class="btn btn-warn-sm" onclick="openReschedule('${esc(id)}')">
         <i class="bi bi-calendar-x me-1"></i>Reschedule</button>` : ''}
     ${c.status === 'accepted' ? `
-      <button class="btn btn-purple-sm" onclick="generateOfferLetter('${id}')">
+      <button class="btn btn-purple-sm" onclick="generateOfferLetter('${esc(id)}')">
         <i class="bi bi-file-earmark-text me-1"></i>Offer Letter</button>` : ''}
-    <button class="btn btn-danger-sm" onclick="setStatus('${id}','rejected')" ${c.status==='rejected'?'disabled':''}>
+    <button class="btn btn-danger-sm" onclick="setStatus('${esc(id)}','rejected')" ${c.status==='rejected'?'disabled':''}>
       <i class="bi bi-x-circle me-1"></i>Reject</button>`;
 
   document.getElementById('adminNotesTxt').value = c.adminNotes || '';
