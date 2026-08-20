@@ -512,6 +512,7 @@ let selectedIds    = new Set();
 let _cfgCache      = {};
 
 const CAT_LABEL = {article:'Article Trainee',semi:'Semi Qualified',qualified:'Qualified CA'};
+const PREF_LOC_LABEL = {bengaluru:'Bengaluru (Head Office)',delhi:'Delhi',mumbai:'Mumbai',hyderabad:'Hyderabad'};
 const DOM_LABEL = {
   statutory:'Statutory Audit', internal:'Internal Audit/IFC',
   direct:'Direct Tax', gst:'Indirect Tax/GST',
@@ -1043,7 +1044,7 @@ function openDetail(id) {
     <div class="det-row"><span class="det-lbl">Email</span><span class="det-val">${esc(c.email)}</span></div>
     <div class="det-row"><span class="det-lbl">Phone</span><span class="det-val">${esc(c.phone)}</span></div>
     <div class="det-row"><span class="det-lbl">Location</span><span class="det-val">${esc(c.city)}, ${esc(c.state)}</span></div>
-    ${c.preferredLocation ? `<div class="det-row"><span class="det-lbl">Preferred Office</span><span class="det-val">${esc({bengaluru:'Bengaluru (Head Office)',delhi:'Delhi',mumbai:'Mumbai',hyderabad:'Hyderabad'}[c.preferredLocation]||c.preferredLocation)}</span></div>` : ''}
+    ${c.preferredLocation ? `<div class="det-row"><span class="det-lbl">Preferred Office</span><span class="det-val">${esc(PREF_LOC_LABEL[c.preferredLocation]||c.preferredLocation)}</span></div>` : ''}
     <div class="det-row"><span class="det-lbl">Languages</span><span class="det-val">${esc((c.langs||[]).join(', '))||'—'}</span></div>
     ${c.joinMonth ? `<div class="det-row"><span class="det-lbl">Expected Joining</span><span class="det-val">${joinDisp}</span></div>` : ''}
   </div>
@@ -1351,7 +1352,7 @@ function exportCSV() {
   const cands = Object.values(allCandidates);
   if (!cands.length) { showToast('No candidates to export.','warn'); return; }
   const headers = ['App ID','Submitted','Status','Category','Area(s)','Name','Email','Phone','City','State',
-    'Languages','G1 Marks','G1 Attempts','G2 Marks','G2 Attempts','G2 N/A',
+    'Preferred Office','Languages','G1 Marks','G1 Attempts','G2 Marks','G2 Attempts','G2 N/A',
     'ICAI Reg No','Articleship Type','Prev Firm','Transfer Date','Months Completed',
     'Exp. Joining','Interviewer','Score-Technical','Score-Comm','Score-Attitude','Score-Analytical','Recommendation',
     'Interview Date','Interview Time','Docs Collected','Admin Notes'];
@@ -1364,6 +1365,7 @@ function exportCSV() {
       c.id, new Date(c.submittedAt).toLocaleDateString('en-IN'),
       STATUS_LABEL[c.status]||c.status, CAT_LABEL[c.category]||c.category, domText,
       c.name, c.email, c.phone, c.city, c.state,
+      PREF_LOC_LABEL[c.preferredLocation] || c.preferredLocation || '',
       (c.langs||[]).join('; '),
       c.g1m, c.g1a, c.g2m||'', c.g2a||'', c.g2na?'Yes':'No',
       c.icaiRegNo||'', c.articleshipType||'', c.prevFirm||'', c.transferDate||'', c.monthsCompleted||'',
