@@ -1,0 +1,65 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "config": {
+      ".read": true,
+      ".write": true
+    },
+
+    "slots": {
+      ".read": true,
+      "$slotId": {
+        ".write": true
+      }
+    },
+
+    "candidates": {
+      "$appId": {
+        ".read": true,
+        ".validate": "newData.hasChildren(['id','name','email','phone','status']) && newData.child('id').val() == $appId",
+
+        "id":               { ".write": "!data.parent().exists()" },
+        "submittedAt":      { ".write": "!data.parent().exists()" },
+        "category":         { ".write": "!data.parent().exists()" },
+        "domains":          { ".write": "!data.parent().exists()" },
+        "othersText":       { ".write": "!data.parent().exists()" },
+        "g1m":              { ".write": "!data.parent().exists()" },
+        "g1a":              { ".write": "!data.parent().exists()" },
+        "g2m":              { ".write": "!data.parent().exists()" },
+        "g2a":              { ".write": "!data.parent().exists()" },
+        "g2na":             { ".write": "!data.parent().exists()" },
+        "icaiRegNo":        { ".write": "!data.parent().exists()" },
+        "joinMonth":        { ".write": "!data.parent().exists()" },
+        "articleshipType":  { ".write": "!data.parent().exists()" },
+        "prevFirm":         { ".write": "!data.parent().exists()" },
+        "prevPrincipal":    { ".write": "!data.parent().exists()" },
+        "transferDate":     { ".write": "!data.parent().exists()" },
+        "monthsCompleted":  { ".write": "!data.parent().exists()" },
+        "name":             { ".write": "!data.parent().exists()" },
+        "email":            { ".write": "!data.parent().exists()" },
+        "phone":            { ".write": "!data.parent().exists()" },
+        "city":             { ".write": "!data.parent().exists()" },
+        "state":            { ".write": "!data.parent().exists()" },
+        "preferredLocation":{ ".write": "!data.parent().exists()" },
+        "langs":            { ".write": "!data.parent().exists()" },
+        "resumeB64":        { ".write": "!data.parent().exists()" },
+        "resumeName":       { ".write": "!data.parent().exists()" },
+
+        "status": {
+          ".write": "!data.parent().exists() || newData.val() === 'slot_booked' || newData.val() === 'rescheduled'"
+        },
+        "slotId":       { ".write": true },
+        "slotDate":     { ".write": true },
+        "slotTime":     { ".write": true },
+        "slotDuration": { ".write": true },
+
+        "adminNotes":  { ".write": true },
+        "interviewer": { ".write": true },
+        "score":       { ".write": true },
+        "docs":        { ".write": true }
+      }
+    }
+  }
+}
