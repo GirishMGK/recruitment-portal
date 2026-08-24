@@ -638,6 +638,16 @@ const db  = () => (FB_READY && typeof firebase !== 'undefined') ? firebase.datab
 const ref = (path) => { const d = db(); return d ? d.ref(path) : null; };
 
 // ═══════════════════════════════════════════════════════
+//  ESCAPE — never inject free-text values into innerHTML
+//  unescaped, even the applicant's own (defense in depth).
+// ═══════════════════════════════════════════════════════
+const ESC_MAP = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
+function esc(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/[&<>"']/g, c => ESC_MAP[c]);
+}
+
+// ═══════════════════════════════════════════════════════
 //  FORM STATE
 // ═══════════════════════════════════════════════════════
 let F = {
@@ -782,11 +792,11 @@ function clearResume() {
 //  REVIEW
 // ═══════════════════════════════════════════════════════
 function renderReview() {
-  const domText = F.domains.map(d => d==='others' ? (F.othersText||'Others') : DOM_LABEL[d]).join(', ') || '—';
-  const g2txt   = F.g2na ? 'Not yet attempted' : `${F.g2m}/300 (${F.g2a} attempt${F.g2a>1?'s':''})`;
+  const domText = F.domains.map(d => d==='others' ? esc(F.othersText||'Others') : DOM_LABEL[d]).join(', ') || '—';
+  const g2txt   = F.g2na ? 'Not yet attempted' : `${esc(F.g2m)}/300 (${esc(F.g2a)} attempt${F.g2a>1?'s':''})`;
   const artInfo  = F.category === 'article'
     ? `<div class="rev-row"><span class="rev-lbl">Articleship Type</span><span class="rev-val">${F.articleshipType === 'transfer' ? 'Transfer Article' : 'Fresh Article'}</span></div>
-       ${F.articleshipType === 'transfer' && F.prevFirm ? `<div class="rev-row"><span class="rev-lbl">Previous Firm</span><span class="rev-val">${F.prevFirm}</span></div>` : ''}`
+       ${F.articleshipType === 'transfer' && F.prevFirm ? `<div class="rev-row"><span class="rev-lbl">Previous Firm</span><span class="rev-val">${esc(F.prevFirm)}</span></div>` : ''}`
     : '';
   const joinInfo = F.joinMonth ? `<div class="rev-row"><span class="rev-lbl">Expected Joining</span><span class="rev-val">${new Date(F.joinMonth+'-01').toLocaleDateString('en-IN',{month:'long',year:'numeric'})}</span></div>` : '';
 
@@ -798,24 +808,24 @@ function renderReview() {
   </div>
   <div class="rev-sec">
     <div class="rev-title">CA Exam Details</div>
-    <div class="rev-row"><span class="rev-lbl">Group 1</span><span class="rev-val">${F.g1m}/300 &nbsp;|&nbsp; ${F.g1a} attempt${F.g1a>1?'s':''}</span></div>
+    <div class="rev-row"><span class="rev-lbl">Group 1</span><span class="rev-val">${esc(F.g1m)}/300 &nbsp;|&nbsp; ${esc(F.g1a)} attempt${F.g1a>1?'s':''}</span></div>
     <div class="rev-row"><span class="rev-lbl">Group 2</span><span class="rev-val">${g2txt}</span></div>
-    ${F.icaiRegNo ? `<div class="rev-row"><span class="rev-lbl">ICAI Reg. No.</span><span class="rev-val">${F.icaiRegNo}</span></div>` : ''}
+    ${F.icaiRegNo ? `<div class="rev-row"><span class="rev-lbl">ICAI Reg. No.</span><span class="rev-val">${esc(F.icaiRegNo)}</span></div>` : ''}
     ${artInfo}
     ${joinInfo}
   </div>
   <div class="rev-sec">
     <div class="rev-title">Personal Details</div>
-    <div class="rev-row"><span class="rev-lbl">Name</span><span class="rev-val">${F.name}</span></div>
-    <div class="rev-row"><span class="rev-lbl">Email</span><span class="rev-val">${F.email}</span></div>
-    <div class="rev-row"><span class="rev-lbl">Phone</span><span class="rev-val">${F.phone}</span></div>
-    <div class="rev-row"><span class="rev-lbl">Location</span><span class="rev-val">${F.city}, ${F.state}</span></div>
+    <div class="rev-row"><span class="rev-lbl">Name</span><span class="rev-val">${esc(F.name)}</span></div>
+    <div class="rev-row"><span class="rev-lbl">Email</span><span class="rev-val">${esc(F.email)}</span></div>
+    <div class="rev-row"><span class="rev-lbl">Phone</span><span class="rev-val">${esc(F.phone)}</span></div>
+    <div class="rev-row"><span class="rev-lbl">Location</span><span class="rev-val">${esc(F.city)}, ${esc(F.state)}</span></div>
     <div class="rev-row"><span class="rev-lbl">Preferred Office</span><span class="rev-val">${{bengaluru:'Bengaluru (Head Office)',delhi:'Delhi',mumbai:'Mumbai',hyderabad:'Hyderabad'}[F.preferredLocation]||'—'}</span></div>
-    <div class="rev-row"><span class="rev-lbl">Languages</span><span class="rev-val">${F.langs.join(', ')||'—'}</span></div>
+    <div class="rev-row"><span class="rev-lbl">Languages</span><span class="rev-val">${esc(F.langs.join(', '))||'—'}</span></div>
   </div>
   <div class="rev-sec">
     <div class="rev-title">Resume</div>
-    <div class="rev-row"><span class="rev-lbl">File</span><span class="rev-val">${F.resumeName||'Not uploaded'}</span></div>
+    <div class="rev-row"><span class="rev-lbl">File</span><span class="rev-val">${esc(F.resumeName)||'Not uploaded'}</span></div>
   </div>
   <div class="alert alert-info py-2 mt-2" style="font-size:.83rem;border-radius:10px;">
     <i class="bi bi-info-circle me-2"></i>
@@ -931,7 +941,7 @@ async function doSubmit() {
       transferDate: F.category === 'article' && F.articleshipType === 'transfer' ? F.transferDate : null,
       monthsCompleted: F.category === 'article' && F.articleshipType === 'transfer' ? F.monthsCompleted : null,
       name: F.name, email: F.email, phone: F.phone,
-      city: F.city, state: F.state, langs: F.langs,
+      city: F.city, state: F.state, preferredLocation: F.preferredLocation, langs: F.langs,
       resumeB64: F.resumeB64, resumeName: F.resumeName,
       slotId: null, slotDate: null, slotTime: null, slotDuration: null,
       adminNotes: '', interviewer: '', score: null, docs: {}
@@ -949,16 +959,16 @@ async function doSubmit() {
     infoBox.innerHTML = `
       <div style="background:#fff;border-radius:10px;padding:16px 18px;margin-bottom:14px;border:1.5px solid #c2d4ed;">
         <div style="font-size:.75rem;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;"><i class="bi bi-phone me-1"></i>Mobile (Primary Reference)</div>
-        <div style="font-size:1.6rem;font-weight:800;letter-spacing:3px;color:var(--primary);">${cand.phone}</div>
+        <div style="font-size:1.6rem;font-weight:800;letter-spacing:3px;color:var(--primary);">${esc(cand.phone)}</div>
         <div style="font-size:.75rem;color:#888;text-transform:uppercase;letter-spacing:.5px;margin:10px 0 4px;"><i class="bi bi-hash me-1"></i>Application ID (Secondary Reference)</div>
-        <div style="font-size:1rem;font-weight:700;font-family:monospace;color:#444;">${appId}</div>
+        <div style="font-size:1rem;font-weight:700;font-family:monospace;color:#444;">${esc(appId)}</div>
       </div>
       <div class="alert alert-warning py-2 mb-2" style="font-size:.82rem;border-radius:8px;">
         <i class="bi bi-exclamation-triangle me-1"></i>
         <strong>Save both above.</strong> Use them in the <strong>Track</strong> tab to check your status.
       </div>
-      <strong>Name:</strong> ${cand.name}<br>
-      <strong>Email:</strong> ${cand.email}<br><br>
+      <strong>Name:</strong> ${esc(cand.name)}<br>
+      <strong>Email:</strong> ${esc(cand.email)}<br><br>
       <i class="bi bi-info-circle me-1 text-primary"></i>
       <span style="font-size:.85rem;">If shortlisted, you will receive an email with a <strong>slot booking link</strong>. You can also book via the <strong>Track</strong> tab once shortlisted.</span>`;
 
